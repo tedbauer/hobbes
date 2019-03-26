@@ -39,12 +39,13 @@ Table_ Table(string id, int value, struct table *tail)
 	return t;
 }
 
-Table_ interpStm(A_stm s, Table_ t);
-
 struct IntAndTable {
 	int i;
 	Table_ t;
 };
+
+Table_ interpStm(A_stm s, Table_ t);
+struct IntAndTable interpExp(A_exp e, Table_ t);
 
 Table_ update(Table_ t, string key, int val)
 {
@@ -74,6 +75,42 @@ int try_lookup(Table_ t, string id) {
 	}
 }
 
+struct IntAndTable interpOp(A_exp e, Table_ t)
+{
+	assert(e->kind == A_opExp);
+
+	struct IntAndTable it_left = interpExp(e->u.op.left, t);
+	int i_left = it_left.i;
+	Table_ t_left = it_left.t;
+
+	struct IntAndTable it_right = interpExp(e->u.op.right, t_left);
+	int i_right = it_right.i;
+	Table_ t_right = it_right.t;
+
+	int* i_result = NULL;
+	switch(e->u.op.oper) {
+		case A_plus:
+			*i_result = i_left + i_right;
+			break;
+		case A_minus:
+			*i_result = i_left - i_right;
+			break;
+		case A_times:
+			*i_result = i_left * i_right;
+			break;
+		case A_div:
+			*i_result = i_left / i_right;
+			break;
+	}
+
+	assert (i_result != NULL);
+	struct IntAndTable result = {
+		.i = *i_result,
+		.t = t_right
+	};
+	return result;
+}
+
 struct IntAndTable interpExp(A_exp e, Table_ t)
 {
 	switch (e->kind) {
@@ -92,7 +129,7 @@ struct IntAndTable interpExp(A_exp e, Table_ t)
 			return it;
 		}
 		case A_opExp:
-			assert(0);
+			return interpOp(e, Table_ t);
 		case A_eseqExp:
 			assert(0);
 		default:
