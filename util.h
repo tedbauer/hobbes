@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdlib.h>
 
 typedef char *string;
 string String(char *);
