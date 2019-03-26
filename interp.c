@@ -1,5 +1,6 @@
 #include "util.h"
 #include "ast.h"
+#include "prog1.h"
 
 typedef struct table *Table_;
 typedef struct option *Option_;
@@ -129,9 +130,11 @@ struct IntAndTable interpExp(A_exp e, Table_ t)
 			return it;
 		}
 		case A_opExp:
-			return interpOp(e, Table_ t);
-		case A_eseqExp:
-			assert(0);
+			return interpOp(e, t);
+		case A_eseqExp: {
+			Table_ t2 = interpStm(e->u.eseq.stm, t);
+			return interpExp(e->u.eseq.exp, t2);
+		}
 		default:
 			assert(0);
 	}
@@ -177,7 +180,7 @@ Table_ interpStm(A_stm s, Table_ t)
 			return Table(id, val, t2);
 		}
 		case A_printStm:
-			break;
+			return printExprs(s->u.print.exps, t);
 		default:
 			assert(0);
 	}
@@ -193,4 +196,8 @@ int max_args(A_stm stm)
 void interp(A_stm stm)
 {
 	interpStm(stm, NULL);
+}
+
+int main() {
+	interp(prog());
 }
