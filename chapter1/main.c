@@ -88,25 +88,24 @@ struct IntAndTable interpOp(A_exp e, Table_ t)
 	int i_right = it_right.i;
 	Table_ t_right = it_right.t;
 
-	int* i_result = NULL;
+	int i_result;
 	switch(e->u.op.oper) {
 		case A_plus:
-			*i_result = i_left + i_right;
+			i_result = i_left + i_right;
 			break;
 		case A_minus:
-			*i_result = i_left - i_right;
+			i_result = i_left - i_right;
 			break;
 		case A_times:
-			*i_result = i_left * i_right;
+			i_result = i_left * i_right;
 			break;
 		case A_div:
-			*i_result = i_left / i_right;
+			i_result = i_left / i_right;
 			break;
 	}
 
-	assert (i_result != NULL);
 	struct IntAndTable result = {
-		.i = *i_result,
+		.i = i_result,
 		.t = t_right
 	};
 	return result;

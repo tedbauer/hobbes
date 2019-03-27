@@ -17,9 +17,9 @@ A_stm prog() {
 										A_IdExp("a"),
 										A_minus,
 										A_NumExp(1))))),
-							A_OpExp(A_NumExp(10),
-								A_times,
-								A_IdExp("a")))),
-					A_PrintStm(A_LastExpList(A_IdExp("b")))));
-}
+						A_OpExp(A_NumExp(10),
+							A_times,
+							A_IdExp("a")))),
+				A_PrintStm(A_LastExpList(A_IdExp("b")))));
 
+}
