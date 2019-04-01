@@ -4,7 +4,8 @@ Implementation and exercise solutions for Appel's Modern Compiler Implementation
 ## Status
 
 ### Compiler implementation
-- [ ] Lexical Analysis
+- [X] Lexical Analysis
+    + [ ] Handle escape sequences
 - [ ] Parsing
 - [ ] Abstract Syntax
 - [ ] Semantic Analysis
