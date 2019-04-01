@@ -28,4 +28,6 @@ Implementation and exercise solutions for Appel's Modern Compiler Implementation
 Todo
 
 ## Links
-- https://www.cs.princeton.edu/~appel/modern/c/project.html
+- [Project Starter Files][sfiles]
+
+[sfiles]: https://www.cs.princeton.edu/~appel/modern/c/project.html

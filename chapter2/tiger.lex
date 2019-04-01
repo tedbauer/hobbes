@@ -29,7 +29,7 @@ void adjust()
 %%
 
 <NORMAL>"/*"                   { adjust(); BEGIN COMMENT; }
-<COMMENT>.                     { adjust(); }
+<COMMENT>.                     { printf("Are we in here?\n"); adjust(); }
 <COMMENT>"*/"                  { adjust(); BEGIN NORMAL; }
 
 <NORMAL>\"                     { adjust(); strAcc = String(""); BEGIN STRING; }
@@ -92,5 +92,5 @@ void adjust()
 <NORMAL>\n                     { adjust(); EM_newline(); continue; }
 <NORMAL>.                      { adjust(); EM_error(EM_tokPos, "illegal token"); }
 
-.                              { printf("We hit this spot.\n"); BEGIN NORMAL; yyless(1); }
+.                              { BEGIN NORMAL; yyless(1); }
 
