@@ -4,6 +4,7 @@
 
 typedef char *string;
 string String(char *);
+string StringAppend(char *s1, char *s2);
 
 typedef char bool;
 #define TRUE 1;
