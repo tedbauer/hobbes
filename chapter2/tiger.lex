@@ -28,9 +28,9 @@ void adjust()
 
 %%
 
-<NORMAL>"/*"                   { adjust(); BEGIN COMMENT; }
-<COMMENT>.                     { printf("Are we in here?\n"); adjust(); }
-<COMMENT>"*/"                  { adjust(); BEGIN NORMAL; }
+<NORMAL>\/\*                   { adjust(); BEGIN COMMENT; }
+<COMMENT>.                     { adjust(); }
+<COMMENT>\*\/                  { adjust(); BEGIN NORMAL; }
 
 <NORMAL>\"                     { adjust(); strAcc = String(""); BEGIN STRING; }
 <STRING>[^\"\\]                { adjust(); strAcc = StringAppend(strAcc, yytext); }
@@ -64,7 +64,7 @@ void adjust()
 <NORMAL>"."                    { adjust(); return DOT; }
 <NORMAL>","                    { adjust(); return COMMA; }
 
-<NORMAL>":="                   { adjust(); return ASSIGN; } 
+<NORMAL>":="                   { adjust(); return ASSIGN; }
 
 <NORMAL>array                  { adjust(); return ARRAY; }
 <NORMAL>for                    { adjust(); return FOR; }
@@ -87,10 +87,9 @@ void adjust()
 <NORMAL>[a-zA-Z][a-zA-Z0-9_]*  { adjust(); yylval.sval = String(yytext); return ID; }
 <NORMAL>[0-9]+                 { adjust(); yylval.ival = atoi(yytext); return INT; }
 
-<NORMAL>" "                    { adjust(); continue; }
-<NORMAL>\t                     { adjust(); continue; }
-<NORMAL>\n                     { adjust(); EM_newline(); continue; }
+<NORMAL>[ \t]                  { adjust(); continue; }
+<NORMAL>\r\n                     { adjust(); EM_newline(); continue; }
 <NORMAL>.                      { adjust(); EM_error(EM_tokPos, "illegal token"); }
 
-.                              { BEGIN NORMAL; yyless(1); }
+.                              { BEGIN NORMAL; yyless(0); }
 
