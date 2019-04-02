@@ -1,34 +1,7 @@
-# Tigger
-Implementation and exercise solutions for Appel's Modern Compiler Implementation in C.
+# Chapter 1
 
-## Status
+## Program
+- [ ] Implement `int max_args(A_stm stm)`.
+- [X] Implement `void interp(A_stm stm)`.
 
-### Compiler implementation
-- [X] Lexical Analysis
-    + [ ] Handle escape sequences
-- [ ] Parsing
-- [ ] Abstract Syntax
-- [ ] Semantic Analysis
-- [ ] Activation Records
-- [ ] Translation to IR
-- [ ] Basic Blocks and Traces
-- [ ] Instruction Selection
-- [ ] Liveness Analysis
-- [ ] Register Allocation
-- [ ] Garbage Collection
-- [ ] Object-Oriented Stuff
-- [ ] Functional Stuff
-- [ ] Polymorphic Types
-- [ ] Dataflow Analysis
-- [ ] Loop Optimizations
-- [ ] Static Single-Assignment Form
-- [ ] Pipelining and Scheduling
-- [ ] Memory Hierarchy Stuff
-
-### Exercises
-Todo
-
-## Links
-- [Project Starter Files][sfiles]
-
-[sfiles]: https://www.cs.princeton.edu/~appel/modern/c/project.html
+## Exercises
