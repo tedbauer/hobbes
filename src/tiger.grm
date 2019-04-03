@@ -30,6 +30,12 @@ void yyerror(char *s)
 	BREAK NIL
 	FUNCTION VAR TYPE
 
+%left SEMICOLON
+%left TIMES DIVIDE
+%nonassoc EQ NEQ LT LE GT GE
+%left AND OR
+%left PLUS MINUS
+
 %start program
 
 %%
@@ -37,38 +43,38 @@ void yyerror(char *s)
 program:	exp
 
 exp:
-	LPAREN exp RPAREN
+	LPAREN seq RPAREN
+	| binop
 	| lvalue
 	| NIL
-	| seq
 	| INT
+	| STRING
 	| ID LPAREN RPAREN
 	| ID LPAREN fargs RPAREN
-	| exp op exp
+
+seq:
+	exp
+	| seq SEMICOLON exp
 
 lvalue:
 	ID
 	| lvalue DOT ID
 	| lvalue LBRACK exp RBRACK
 
-seq:
-	exp SEMICOLON exp
-	| seq SEMICOLON exp
-
 fargs:
 	exp
 	| fargs COMMA exp
 
-op:
-	PLUS
-	| MINUS
-	| TIMES
-	| DIVIDE
-	| EQ
-	| NEQ
-	| LT
-	| LE
-	| GT
-	| GE
-	| AND
-	| OR
+binop:
+	exp PLUS exp
+	| exp MINUS exp
+	| exp TIMES exp
+	| exp DIVIDE exp
+	| exp EQ exp
+	| exp NEQ exp
+	| exp LT exp
+	| exp LE exp
+	| exp GT exp
+	| exp GE exp
+	| exp AND exp
+	| exp OR exp
