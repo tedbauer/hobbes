@@ -8,7 +8,7 @@ YYSTYPE yylval;
 int yylex(void);
 
 string toknames[] = {
-	"ID", "STRING", "INT", "COMMA", "COLON", "SEMICOLON", "LPAREN",
+	"DUMMY", "ID", "STRING", "INT", "COMMA", "COLON", "SEMICOLON", "LPAREN",
 	"RPAREN", "LBRACK", "RBRACK", "LBRACE", "RBRACE", "DOT", "PLUS",
 	"MINUS", "TIMES", "DIVIDE", "EQ", "NEQ", "LT", "LE", "GT", "GE",
 	"AND", "OR", "ASSIGN", "ARRAY", "IF", "THEN", "ELSE", "WHILE", "FOR",
@@ -39,13 +39,13 @@ int main(int argc, char **argv)
 			break;
 		switch (tok) {
 			case ID: case STRING:
-				printf("%10s %4d %s\n", tokname(tok), EM_tokPos, yylval.sval);
+				printf("[%d] %10s %4d %s\n", tok, tokname(tok), EM_tokPos, yylval.sval);
 				break;
 			case INT:
-				printf("%10s %4d %d\n", tokname(tok), EM_tokPos, yylval.ival);
+				printf("[%d] %10s %4d %d\n", tok, tokname(tok), EM_tokPos, yylval.ival);
 				break;
 			default:
-				printf("%10s %4d\n", tokname(tok), EM_tokPos);
+				printf("[%d] %10s %4d\n", tok, tokname(tok), EM_tokPos);
 
 		}
 	}

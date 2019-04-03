@@ -24,7 +24,7 @@ void adjust()
 //<STRING>\\                     { adjust(); BEGIN ESCAPE_SEQ; }
 %}
 
-%Start NORMAL COMMENT STRING ESCAPE_SEQ
+%Start NORMAL COMMENT BUILD_STRING ESCAPE_SEQ
 
 %%
 
@@ -32,9 +32,9 @@ void adjust()
 <COMMENT>.                     { adjust(); }
 <COMMENT>\*\/                  { adjust(); BEGIN NORMAL; }
 
-<NORMAL>\"                     { adjust(); strAcc = String(""); BEGIN STRING; }
-<STRING>[^\"\\]                { adjust(); strAcc = StringAppend(strAcc, yytext); }
-<STRING>\"                     { adjust(); yylval.sval = String(strAcc); BEGIN NORMAL; }
+<NORMAL>\"                     { adjust(); strAcc = String(""); BEGIN BUILD_STRING; }
+<BUILD_STRING>[^\"\\]          { adjust(); strAcc = StringAppend(strAcc, yytext); }
+<BUILD_STRING>\"               { adjust(); yylval.sval = String(strAcc); BEGIN NORMAL; return STRING; }
 
 <NORMAL>"+"                    { adjust(); return PLUS; }
 <NORMAL>"-"                    { adjust(); return MINUS; }
