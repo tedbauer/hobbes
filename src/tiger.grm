@@ -43,18 +43,26 @@ void yyerror(char *s)
 program:	exp
 
 exp:
-	LPAREN seq RPAREN
-	| binop
-	| lvalue
+	LPAREN RPAREN
+	| LPAREN seq RPAREN
+	| MINUS INT
 	| NIL
 	| INT
 	| STRING
 	| ID LPAREN RPAREN
 	| ID LPAREN fargs RPAREN
+	| LET decs IN expseq END
+	| arr_create
+	| binop
+	| lvalue
 
 seq:
 	exp
 	| seq SEMICOLON exp
+
+expseq:
+	seq
+	|
 
 lvalue:
 	ID
@@ -78,3 +86,35 @@ binop:
 	| exp GE exp
 	| exp AND exp
 	| exp OR exp
+
+decs:
+	| dec
+	| dec dec
+
+dec:
+	tydec
+	| vardec
+	| funcdef
+
+tydec:
+	TYPE ID EQ ty
+
+ty:
+	ID
+	| LBRACK tyfields RBRACK
+	| ARRAY OF ID
+
+tyfields:
+	| ID COLON ID
+	| tyfields COMMA ID COLON ID
+
+vardec:
+	VAR ID ASSIGN exp
+	| VAR ID COLON ID ASSIGN exp
+
+funcdef:
+	FUNCTION ID LPAREN tyfields RPAREN EQ exp
+	| FUNCTION ID LPAREN tyfields RPAREN COLON ID EQ exp
+
+arr_create:
+	ID LBRACK exp RBRACK OF exp
