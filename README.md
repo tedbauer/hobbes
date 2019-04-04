@@ -17,7 +17,7 @@ There are a few helpful commands:
 
 ### Compiler implementation
 - [X] Lexical Analysis
-    + [ ] Handle escape sequences
+    + [ ] Add support for `\^c`, `\ddd`, and `\f___f\`
 - [X] Parsing
 - [ ] Abstract Syntax
 - [ ] Semantic Analysis
