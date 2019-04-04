@@ -16,7 +16,7 @@ There are a few helpful commands:
 ### Compiler implementation
 - [X] Lexical Analysis
     + [ ] Handle escape sequences
-- [ ] Parsing
+- [X] Parsing
 - [ ] Abstract Syntax
 - [ ] Semantic Analysis
 - [ ] Activation Records
