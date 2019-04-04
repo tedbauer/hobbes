@@ -12,7 +12,7 @@ void yyerror(char *s)
 	EM_error(EM_tokPos, "%s", s);
 }
 
-//int yydebug = 1;
+int yydebug = 1;
 
 %}
 
@@ -92,7 +92,7 @@ binop_expression
 	;
 
 make_array_expression
-	: ID LBRACK expression RBRACK OF expression
+	: lvalue_expression OF expression
 	;
 
 make_record_expression
