@@ -155,6 +155,7 @@ lvalue_expression
 	: ID
 	| lvalue_expression DOT ID
 	| lvalue_expression LBRACK expression RBRACK
+	;
 
 lvalue_assignment
 	: lvalue_expression ASSIGN expression
