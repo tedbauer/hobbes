@@ -8,8 +8,10 @@ Tigger requires [Lex and Yacc][lexyacc].
 There are a few helpful commands:
 - `make lextest`: build executable `lextest`, which you can run with
   `./lextest example.tiger` to see the tokens that get lexed.
-- `make parsetest`: build executable `parsetest`, which you can use
-  to see if a program is properly parsed or not.
+- `make parsetest`: build executable `parsetest`. You can either run
+  `./parsetest example.tiger` to check if `example.tiger` was parsed
+  correctly, or you can run `./parsetest` and it will check every file
+  in `testcases/`.
 
 ## Status
 
