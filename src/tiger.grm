@@ -39,6 +39,8 @@ int yydebug = 1;
 %nonassoc EQ NEQ LT LE GT GE
 %left AND OR
 %left PLUS MINUS
+%nonassoc THEN
+%nonassoc ELSE
 
 %start program
 
@@ -53,6 +55,7 @@ atom
 	| MINUS INT
 	| NIL
 	| STRING
+	| BREAK
 	| LPAREN RPAREN
 	| LPAREN expression_seq RPAREN
 	| LPAREN expression RPAREN
@@ -64,7 +67,12 @@ expression
 	: atom
 	| binop_expression
 	| make_array_expression
+	| make_record_expression
 	| let_declaration
+	| for_expression
+	| while_expression
+	| if_then_expression
+	| if_then_else_expression
 	;
 
 binop_expression
@@ -84,6 +92,16 @@ binop_expression
 
 make_array_expression
 	: ID LBRACK expression RBRACK OF expression
+	;
+
+make_record_expression
+	: ID LBRACE RBRACE
+	| ID LBRACE assignment_list RBRACE
+	;
+
+assignment_list
+	: ID EQ expression
+	| assignment_list COMMA ID EQ expression
 	;
 
 argument_list
@@ -123,7 +141,7 @@ type_declaration
 
 type
 	: ID
-	| LBRACK type_fields RBRACK
+	| LBRACE type_fields RBRACE
 	| ARRAY OF ID
 	;
 
@@ -140,4 +158,20 @@ var_declaration
 func_declaration
 	: FUNCTION ID LPAREN type_fields RPAREN EQ expression
 	| FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ expression
+	;
+
+for_expression
+	: FOR ID ASSIGN expression TO expression DO expression
+	;
+
+while_expression
+	: WHILE expression DO expression
+	;
+
+if_then_expression
+	: IF expression THEN expression
+	;
+
+if_then_else_expression
+	: IF expression THEN expression ELSE expression
 	;
