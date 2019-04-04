@@ -3,13 +3,17 @@
 #include "util.h"
 #include "errormsg.h"
 
+#define YYDEBUG 1
+
 int yylex(void);
 
 void yyerror(char *s)
 {
 	EM_error(EM_tokPos, "%s", s);
 }
-//FIXME: add valueless expressions!
+
+int yydebug = 1;
+
 %}
 
 %union {
@@ -40,81 +44,99 @@ void yyerror(char *s)
 
 %%
 
-program:	exp
+program
+	: expression
 
-exp:
-	LPAREN RPAREN
-	| LPAREN seq RPAREN
+atom
+	: INT
 	| MINUS INT
 	| NIL
-	| INT
 	| STRING
+	| LPAREN RPAREN
+	| LPAREN expression_seq RPAREN
+	| LPAREN expression RPAREN
 	| ID LPAREN RPAREN
-	| ID LPAREN fargs RPAREN
-	| LET decs IN expseq END
-	| arr_create
-	| binop
-	| lvalue
+	| ID LPAREN argument_list RPAREN
+	;
 
-seq:
-	exp
-	| seq SEMICOLON exp
+expression
+	: atom
+	| binop_expression
+	| make_array_expression
+	| let_declaration
+	;
 
-expseq:
-	seq
+binop_expression
+	: atom PLUS expression
+	| atom MINUS expression
+	| atom TIMES expression
+	| atom DIVIDE expression
+	| atom EQ expression
+	| atom NEQ expression
+	| atom LT expression
+	| atom LE expression
+	| atom GT expression
+	| atom GE expression
+	| atom AND expression
+	| atom OR expression
+	;
+
+make_array_expression
+	: ID LBRACK expression RBRACK OF expression
+	;
+
+argument_list
+	: expression
+	| argument_list COMMA expression
+	;
+
+expression_seq
+	: expression SEMICOLON expression
+	| expression_seq SEMICOLON expression
+	;
+
+let_declaration
+	: LET declarations IN expression_kleenes END
+	;
+
+expression_kleenes
+	: expression
+	| expression_seq
 	|
+	;
 
-lvalue:
-	ID
-	| lvalue DOT ID
-	| lvalue LBRACK exp RBRACK
+declarations
+	: declaration
+	| declaration declaration
+	;
 
-fargs:
-	exp
-	| fargs COMMA exp
+declaration
+	: type_declaration
+	| var_declaration
+	| func_declaration
+	;
 
-binop:
-	exp PLUS exp
-	| exp MINUS exp
-	| exp TIMES exp
-	| exp DIVIDE exp
-	| exp EQ exp
-	| exp NEQ exp
-	| exp LT exp
-	| exp LE exp
-	| exp GT exp
-	| exp GE exp
-	| exp AND exp
-	| exp OR exp
+type_declaration
+	: TYPE ID EQ type
+	;
 
-decs:
-	| dec
-	| dec dec
-
-dec:
-	tydec
-	| vardec
-	| funcdef
-
-tydec:
-	TYPE ID EQ ty
-
-ty:
-	ID
-	| LBRACK tyfields RBRACK
+type
+	: ID
+	| LBRACK type_fields RBRACK
 	| ARRAY OF ID
+	;
 
-tyfields:
-	| ID COLON ID
-	| tyfields COMMA ID COLON ID
+type_fields
+	: ID COLON ID
+	| type_fields COMMA ID COLON ID
+	;
 
-vardec:
-	VAR ID ASSIGN exp
-	| VAR ID COLON ID ASSIGN exp
+var_declaration
+	: VAR ID ASSIGN expression
+	| VAR ID COLON ID ASSIGN expression
+	;
 
-funcdef:
-	FUNCTION ID LPAREN tyfields RPAREN EQ exp
-	| FUNCTION ID LPAREN tyfields RPAREN COLON ID EQ exp
-
-arr_create:
-	ID LBRACK exp RBRACK OF exp
+func_declaration
+	: FUNCTION ID LPAREN type_fields RPAREN EQ expression
+	| FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ expression
+	;
