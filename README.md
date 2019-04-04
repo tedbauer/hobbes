@@ -18,4 +18,3 @@ There are a few helpful commands:
 
 [sfiles]: https://www.cs.princeton.edu/~appel/modern/c/project.html
 [lexyacc]: http://dinosaur.compilertools.net/#yacc
-[
