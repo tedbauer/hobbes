@@ -32,4 +32,4 @@ util.o: util.c util.h
 	cc -g -c util.c
 
 clean:
-	rm -f y.tab.c y.tab.h lex.yy.c lextest parsetest *.o y.output
+	rm -f y.tab.c y.tab.h lex.yy.c lextest parsetest *.o y.output parsetest.out
