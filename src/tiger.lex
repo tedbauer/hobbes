@@ -33,7 +33,9 @@ void adjust()
 <COMMENT>\*\/                  { adjust(); BEGIN NORMAL; }
 
 <NORMAL>\"                     { adjust(); strAcc = String(""); BEGIN BUILD_STRING; }
+<BUILD_STRING>\\               { adjust(); strAcc = StringAppend(strAcc, yytext); BEGIN ESCAPE_SEQ; }
 <BUILD_STRING>[^\"\\]          { adjust(); strAcc = StringAppend(strAcc, yytext); }
+<ESCAPE_SEQ>[nt\\\"]           { adjust(); strAcc = StringAppend(strAcc, yytext); BEGIN BUILD_STRING; }
 <BUILD_STRING>\"               { adjust(); yylval.sval = String(strAcc); BEGIN NORMAL; return STRING; }
 
 <NORMAL>"+"                    { adjust(); return PLUS; }
