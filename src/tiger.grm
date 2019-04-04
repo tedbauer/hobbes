@@ -108,7 +108,7 @@ expression_kleenes
 
 declarations
 	: declaration
-	| declaration declaration
+	| declarations declaration
 	;
 
 declaration

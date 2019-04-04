@@ -63,7 +63,7 @@ Grammar
    36                   | /* empty */
 
    37 declarations: declaration
-   38             | declaration declaration
+   38             | declarations declaration
 
    39 declaration: type_declaration
    40            | var_declaration
@@ -159,7 +159,7 @@ let_declaration (54)
 expression_kleenes (55)
     on left: 34 35 36, on right: 33
 declarations (56)
-    on left: 37 38, on right: 33
+    on left: 37 38, on right: 33 38
 declaration (57)
     on left: 39 40 41, on right: 37 38
 type_declaration (58)
@@ -439,25 +439,24 @@ state 22
 state 23
 
    33 let_declaration: LET declarations . IN expression_kleenes END
+   38 declarations: declarations . declaration
 
-    IN  shift, and go to state 52
-
-
-state 24
-
-   37 declarations: declaration .
-   38             | declaration . declaration
-
+    IN        shift, and go to state 52
     FUNCTION  shift, and go to state 20
     VAR       shift, and go to state 21
     TYPE      shift, and go to state 22
-
-    $default  reduce using rule 37 (declarations)
 
     declaration       go to state 53
     type_declaration  go to state 25
     var_declaration   go to state 26
     func_declaration  go to state 27
+
+
+state 24
+
+   37 declarations: declaration .
+
+    $default  reduce using rule 37 (declarations)
 
 
 state 25
@@ -847,7 +846,7 @@ state 52
 
 state 53
 
-   38 declarations: declaration declaration .
+   38 declarations: declarations declaration .
 
     $default  reduce using rule 38 (declarations)
 
