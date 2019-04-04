@@ -50,7 +50,7 @@ struct A_exp_ {
 		struct { S_symbol typ; A_efieldList fields; } record;
 		A_expList seq;
 		struct { A_var var; A_exp exp; } assign;
-		struct { A_exp test, then elsee; } iff;
+		struct { A_exp test, then, elsee; } iff;
 		struct { A_exp test, body; } whilee;
 		struct { S_symbol var; A_exp lo, hi, body; bool escape; } forr;
 		struct { A_decList decs; A_exp body; } let;
@@ -60,7 +60,7 @@ struct A_exp_ {
 };
 
 struct A_dec_ {
-	enum { A_functionDef, A_varDec, A_typeDec } kind;
+	enum { A_functionDec, A_varDec, A_typeDec } kind;
 	A_pos pos;
 	union {
 		A_fundecList function;
@@ -83,15 +83,15 @@ struct A_ty_ {
 struct A_field_ { S_symbol name, typ; A_pos pos; bool escape; };
 struct A_fieldList_ { A_field head; A_fieldList tail; };
 struct A_expList_ { A_exp head; A_expList tail; };
-struct A_fundef_ {
+struct A_fundec_ {
 	A_pos pos; S_symbol name; A_fieldList params;
 	S_symbol result; A_exp body;
 };
 
 struct A_fundecList_ { A_fundec head; A_fundecList tail; };
-struct A_decList_ { A_fundec head; A_fundecList tail };
-struct A_namety_ { A_dec head; A_decList tail; };
-struct A_nametyList_ { S_symbol name; A_ty ty; };
+struct A_decList_ { A_dec head; A_decList tail };
+struct A_namety_ { S_symbol name; A_ty ty; };
+struct A_nametyList_ { A_namety head; A_nametyList tail; };
 struct A_efield_ { S_symbol name; A_exp exp; };
 struct A_efieldList_ { A_efield head; A_efieldList tail; };
 
