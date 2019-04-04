@@ -12,7 +12,7 @@ void yyerror(char *s)
 	EM_error(EM_tokPos, "%s", s);
 }
 
-int yydebug = 1;
+//int yydebug = 1;
 
 %}
 
@@ -50,13 +50,13 @@ program
 	: expression
 
 atom
-	: ID
-	| INT
+	: INT
 	| MINUS INT
 	| NIL
 	| STRING
 	| BREAK
 	| LPAREN RPAREN
+	| lvalue_expression
 	| LPAREN expression_seq RPAREN
 	| LPAREN expression RPAREN
 	| ID LPAREN RPAREN
@@ -73,6 +73,7 @@ expression
 	| while_expression
 	| if_then_expression
 	| if_then_else_expression
+	| lvalue_assignment
 	;
 
 binop_expression
@@ -148,6 +149,15 @@ type
 type_fields
 	: ID COLON ID
 	| type_fields COMMA ID COLON ID
+	;
+
+lvalue_expression
+	: ID
+	| lvalue_expression DOT ID
+	| lvalue_expression LBRACK expression RBRACK
+
+lvalue_assignment
+	: lvalue_expression ASSIGN expression
 	;
 
 var_declaration
