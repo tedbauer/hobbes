@@ -1,0 +1,1331 @@
+Terminals which are not used
+
+   LBRACE
+   RBRACE
+   DOT
+   IF
+   THEN
+   ELSE
+   WHILE
+   FOR
+   TO
+   DO
+   BREAK
+
+
+Grammar
+
+    0 $accept: program $end
+
+    1 program: expression
+
+    2 atom: ID
+    3     | INT
+    4     | MINUS INT
+    5     | NIL
+    6     | STRING
+    7     | LPAREN RPAREN
+    8     | LPAREN expression_seq RPAREN
+    9     | LPAREN expression RPAREN
+   10     | ID LPAREN RPAREN
+   11     | ID LPAREN argument_list RPAREN
+
+   12 expression: atom
+   13           | binop_expression
+   14           | make_array_expression
+   15           | let_declaration
+
+   16 binop_expression: atom PLUS expression
+   17                 | atom MINUS expression
+   18                 | atom TIMES expression
+   19                 | atom DIVIDE expression
+   20                 | atom EQ expression
+   21                 | atom NEQ expression
+   22                 | atom LT expression
+   23                 | atom LE expression
+   24                 | atom GT expression
+   25                 | atom GE expression
+   26                 | atom AND expression
+   27                 | atom OR expression
+
+   28 make_array_expression: ID LBRACK expression RBRACK OF expression
+
+   29 argument_list: expression
+   30              | argument_list COMMA expression
+
+   31 expression_seq: expression SEMICOLON expression
+   32               | expression_seq SEMICOLON expression
+
+   33 let_declaration: LET declarations IN expression_kleenes END
+
+   34 expression_kleenes: expression
+   35                   | expression_seq
+   36                   | /* empty */
+
+   37 declarations: declaration
+   38             | declaration declaration
+
+   39 declaration: type_declaration
+   40            | var_declaration
+   41            | func_declaration
+
+   42 type_declaration: TYPE ID EQ type
+
+   43 type: ID
+   44     | LBRACK type_fields RBRACK
+   45     | ARRAY OF ID
+
+   46 type_fields: ID COLON ID
+   47            | type_fields COMMA ID COLON ID
+
+   48 var_declaration: VAR ID ASSIGN expression
+   49                | VAR ID COLON ID ASSIGN expression
+
+   50 func_declaration: FUNCTION ID LPAREN type_fields RPAREN EQ expression
+   51                 | FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ expression
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+error (256)
+ID (258) 2 10 11 28 42 43 45 46 47 48 49 50 51
+STRING (259) 6
+INT (260) 3 4
+COMMA (261) 30 47
+COLON (262) 46 47 49 51
+SEMICOLON (263) 31 32
+LPAREN (264) 7 8 9 10 11 50 51
+RPAREN (265) 7 8 9 10 11 50 51
+LBRACK (266) 28 44
+RBRACK (267) 28 44
+LBRACE (268)
+RBRACE (269)
+DOT (270)
+PLUS (271) 16
+MINUS (272) 4 17
+TIMES (273) 18
+DIVIDE (274) 19
+EQ (275) 20 42 50 51
+NEQ (276) 21
+LT (277) 22
+LE (278) 23
+GT (279) 24
+GE (280) 25
+AND (281) 26
+OR (282) 27
+ASSIGN (283) 48 49
+ARRAY (284) 45
+IF (285)
+THEN (286)
+ELSE (287)
+WHILE (288)
+FOR (289)
+TO (290)
+DO (291)
+LET (292) 33
+IN (293) 33
+END (294) 33
+OF (295) 28 45
+BREAK (296)
+NIL (297) 5
+FUNCTION (298) 50 51
+VAR (299) 48 49
+TYPE (300) 42
+
+
+Nonterminals, with rules where they appear
+
+$accept (46)
+    on left: 0
+program (47)
+    on left: 1, on right: 0
+atom (48)
+    on left: 2 3 4 5 6 7 8 9 10 11, on right: 12 16 17 18 19 20 21
+    22 23 24 25 26 27
+expression (49)
+    on left: 12 13 14 15, on right: 1 9 16 17 18 19 20 21 22 23 24
+    25 26 27 28 29 30 31 32 34 48 49 50 51
+binop_expression (50)
+    on left: 16 17 18 19 20 21 22 23 24 25 26 27, on right: 13
+make_array_expression (51)
+    on left: 28, on right: 14
+argument_list (52)
+    on left: 29 30, on right: 11 30
+expression_seq (53)
+    on left: 31 32, on right: 8 32 35
+let_declaration (54)
+    on left: 33, on right: 15
+expression_kleenes (55)
+    on left: 34 35 36, on right: 33
+declarations (56)
+    on left: 37 38, on right: 33
+declaration (57)
+    on left: 39 40 41, on right: 37 38
+type_declaration (58)
+    on left: 42, on right: 39
+type (59)
+    on left: 43 44 45, on right: 42
+type_fields (60)
+    on left: 46 47, on right: 44 47 50 51
+var_declaration (61)
+    on left: 48 49, on right: 40
+func_declaration (62)
+    on left: 50 51, on right: 41
+
+
+state 0
+
+    0 $accept: . program $end
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    program                go to state 8
+    atom                   go to state 9
+    expression             go to state 10
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 1
+
+    2 atom: ID .
+   10     | ID . LPAREN RPAREN
+   11     | ID . LPAREN argument_list RPAREN
+   28 make_array_expression: ID . LBRACK expression RBRACK OF expression
+
+    LPAREN  shift, and go to state 14
+    LBRACK  shift, and go to state 15
+
+    $default  reduce using rule 2 (atom)
+
+
+state 2
+
+    6 atom: STRING .
+
+    $default  reduce using rule 6 (atom)
+
+
+state 3
+
+    3 atom: INT .
+
+    $default  reduce using rule 3 (atom)
+
+
+state 4
+
+    7 atom: LPAREN . RPAREN
+    8     | LPAREN . expression_seq RPAREN
+    9     | LPAREN . expression RPAREN
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    RPAREN  shift, and go to state 16
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 17
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    expression_seq         go to state 18
+    let_declaration        go to state 13
+
+
+state 5
+
+    4 atom: MINUS . INT
+
+    INT  shift, and go to state 19
+
+
+state 6
+
+   33 let_declaration: LET . declarations IN expression_kleenes END
+
+    FUNCTION  shift, and go to state 20
+    VAR       shift, and go to state 21
+    TYPE      shift, and go to state 22
+
+    declarations      go to state 23
+    declaration       go to state 24
+    type_declaration  go to state 25
+    var_declaration   go to state 26
+    func_declaration  go to state 27
+
+
+state 7
+
+    5 atom: NIL .
+
+    $default  reduce using rule 5 (atom)
+
+
+state 8
+
+    0 $accept: program . $end
+
+    $end  shift, and go to state 28
+
+
+state 9
+
+   12 expression: atom .
+   16 binop_expression: atom . PLUS expression
+   17                 | atom . MINUS expression
+   18                 | atom . TIMES expression
+   19                 | atom . DIVIDE expression
+   20                 | atom . EQ expression
+   21                 | atom . NEQ expression
+   22                 | atom . LT expression
+   23                 | atom . LE expression
+   24                 | atom . GT expression
+   25                 | atom . GE expression
+   26                 | atom . AND expression
+   27                 | atom . OR expression
+
+    PLUS    shift, and go to state 29
+    MINUS   shift, and go to state 30
+    TIMES   shift, and go to state 31
+    DIVIDE  shift, and go to state 32
+    EQ      shift, and go to state 33
+    NEQ     shift, and go to state 34
+    LT      shift, and go to state 35
+    LE      shift, and go to state 36
+    GT      shift, and go to state 37
+    GE      shift, and go to state 38
+    AND     shift, and go to state 39
+    OR      shift, and go to state 40
+
+    $default  reduce using rule 12 (expression)
+
+
+state 10
+
+    1 program: expression .
+
+    $default  reduce using rule 1 (program)
+
+
+state 11
+
+   13 expression: binop_expression .
+
+    $default  reduce using rule 13 (expression)
+
+
+state 12
+
+   14 expression: make_array_expression .
+
+    $default  reduce using rule 14 (expression)
+
+
+state 13
+
+   15 expression: let_declaration .
+
+    $default  reduce using rule 15 (expression)
+
+
+state 14
+
+   10 atom: ID LPAREN . RPAREN
+   11     | ID LPAREN . argument_list RPAREN
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    RPAREN  shift, and go to state 41
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 42
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    argument_list          go to state 43
+    let_declaration        go to state 13
+
+
+state 15
+
+   28 make_array_expression: ID LBRACK . expression RBRACK OF expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 44
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 16
+
+    7 atom: LPAREN RPAREN .
+
+    $default  reduce using rule 7 (atom)
+
+
+state 17
+
+    9 atom: LPAREN expression . RPAREN
+   31 expression_seq: expression . SEMICOLON expression
+
+    SEMICOLON  shift, and go to state 45
+    RPAREN     shift, and go to state 46
+
+
+state 18
+
+    8 atom: LPAREN expression_seq . RPAREN
+   32 expression_seq: expression_seq . SEMICOLON expression
+
+    SEMICOLON  shift, and go to state 47
+    RPAREN     shift, and go to state 48
+
+
+state 19
+
+    4 atom: MINUS INT .
+
+    $default  reduce using rule 4 (atom)
+
+
+state 20
+
+   50 func_declaration: FUNCTION . ID LPAREN type_fields RPAREN EQ expression
+   51                 | FUNCTION . ID LPAREN type_fields RPAREN COLON ID EQ expression
+
+    ID  shift, and go to state 49
+
+
+state 21
+
+   48 var_declaration: VAR . ID ASSIGN expression
+   49                | VAR . ID COLON ID ASSIGN expression
+
+    ID  shift, and go to state 50
+
+
+state 22
+
+   42 type_declaration: TYPE . ID EQ type
+
+    ID  shift, and go to state 51
+
+
+state 23
+
+   33 let_declaration: LET declarations . IN expression_kleenes END
+
+    IN  shift, and go to state 52
+
+
+state 24
+
+   37 declarations: declaration .
+   38             | declaration . declaration
+
+    FUNCTION  shift, and go to state 20
+    VAR       shift, and go to state 21
+    TYPE      shift, and go to state 22
+
+    $default  reduce using rule 37 (declarations)
+
+    declaration       go to state 53
+    type_declaration  go to state 25
+    var_declaration   go to state 26
+    func_declaration  go to state 27
+
+
+state 25
+
+   39 declaration: type_declaration .
+
+    $default  reduce using rule 39 (declaration)
+
+
+state 26
+
+   40 declaration: var_declaration .
+
+    $default  reduce using rule 40 (declaration)
+
+
+state 27
+
+   41 declaration: func_declaration .
+
+    $default  reduce using rule 41 (declaration)
+
+
+state 28
+
+    0 $accept: program $end .
+
+    $default  accept
+
+
+state 29
+
+   16 binop_expression: atom PLUS . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 54
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 30
+
+   17 binop_expression: atom MINUS . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 55
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 31
+
+   18 binop_expression: atom TIMES . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 56
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 32
+
+   19 binop_expression: atom DIVIDE . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 57
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 33
+
+   20 binop_expression: atom EQ . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 58
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 34
+
+   21 binop_expression: atom NEQ . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 59
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 35
+
+   22 binop_expression: atom LT . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 60
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 36
+
+   23 binop_expression: atom LE . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 61
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 37
+
+   24 binop_expression: atom GT . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 62
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 38
+
+   25 binop_expression: atom GE . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 63
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 39
+
+   26 binop_expression: atom AND . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 64
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 40
+
+   27 binop_expression: atom OR . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 65
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 41
+
+   10 atom: ID LPAREN RPAREN .
+
+    $default  reduce using rule 10 (atom)
+
+
+state 42
+
+   29 argument_list: expression .
+
+    $default  reduce using rule 29 (argument_list)
+
+
+state 43
+
+   11 atom: ID LPAREN argument_list . RPAREN
+   30 argument_list: argument_list . COMMA expression
+
+    COMMA   shift, and go to state 66
+    RPAREN  shift, and go to state 67
+
+
+state 44
+
+   28 make_array_expression: ID LBRACK expression . RBRACK OF expression
+
+    RBRACK  shift, and go to state 68
+
+
+state 45
+
+   31 expression_seq: expression SEMICOLON . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 69
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 46
+
+    9 atom: LPAREN expression RPAREN .
+
+    $default  reduce using rule 9 (atom)
+
+
+state 47
+
+   32 expression_seq: expression_seq SEMICOLON . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 70
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 48
+
+    8 atom: LPAREN expression_seq RPAREN .
+
+    $default  reduce using rule 8 (atom)
+
+
+state 49
+
+   50 func_declaration: FUNCTION ID . LPAREN type_fields RPAREN EQ expression
+   51                 | FUNCTION ID . LPAREN type_fields RPAREN COLON ID EQ expression
+
+    LPAREN  shift, and go to state 71
+
+
+state 50
+
+   48 var_declaration: VAR ID . ASSIGN expression
+   49                | VAR ID . COLON ID ASSIGN expression
+
+    COLON   shift, and go to state 72
+    ASSIGN  shift, and go to state 73
+
+
+state 51
+
+   42 type_declaration: TYPE ID . EQ type
+
+    EQ  shift, and go to state 74
+
+
+state 52
+
+   33 let_declaration: LET declarations IN . expression_kleenes END
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    $default  reduce using rule 36 (expression_kleenes)
+
+    atom                   go to state 9
+    expression             go to state 75
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    expression_seq         go to state 76
+    let_declaration        go to state 13
+    expression_kleenes     go to state 77
+
+
+state 53
+
+   38 declarations: declaration declaration .
+
+    $default  reduce using rule 38 (declarations)
+
+
+state 54
+
+   16 binop_expression: atom PLUS expression .
+
+    $default  reduce using rule 16 (binop_expression)
+
+
+state 55
+
+   17 binop_expression: atom MINUS expression .
+
+    $default  reduce using rule 17 (binop_expression)
+
+
+state 56
+
+   18 binop_expression: atom TIMES expression .
+
+    $default  reduce using rule 18 (binop_expression)
+
+
+state 57
+
+   19 binop_expression: atom DIVIDE expression .
+
+    $default  reduce using rule 19 (binop_expression)
+
+
+state 58
+
+   20 binop_expression: atom EQ expression .
+
+    $default  reduce using rule 20 (binop_expression)
+
+
+state 59
+
+   21 binop_expression: atom NEQ expression .
+
+    $default  reduce using rule 21 (binop_expression)
+
+
+state 60
+
+   22 binop_expression: atom LT expression .
+
+    $default  reduce using rule 22 (binop_expression)
+
+
+state 61
+
+   23 binop_expression: atom LE expression .
+
+    $default  reduce using rule 23 (binop_expression)
+
+
+state 62
+
+   24 binop_expression: atom GT expression .
+
+    $default  reduce using rule 24 (binop_expression)
+
+
+state 63
+
+   25 binop_expression: atom GE expression .
+
+    $default  reduce using rule 25 (binop_expression)
+
+
+state 64
+
+   26 binop_expression: atom AND expression .
+
+    $default  reduce using rule 26 (binop_expression)
+
+
+state 65
+
+   27 binop_expression: atom OR expression .
+
+    $default  reduce using rule 27 (binop_expression)
+
+
+state 66
+
+   30 argument_list: argument_list COMMA . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 78
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 67
+
+   11 atom: ID LPAREN argument_list RPAREN .
+
+    $default  reduce using rule 11 (atom)
+
+
+state 68
+
+   28 make_array_expression: ID LBRACK expression RBRACK . OF expression
+
+    OF  shift, and go to state 79
+
+
+state 69
+
+   31 expression_seq: expression SEMICOLON expression .
+
+    $default  reduce using rule 31 (expression_seq)
+
+
+state 70
+
+   32 expression_seq: expression_seq SEMICOLON expression .
+
+    $default  reduce using rule 32 (expression_seq)
+
+
+state 71
+
+   50 func_declaration: FUNCTION ID LPAREN . type_fields RPAREN EQ expression
+   51                 | FUNCTION ID LPAREN . type_fields RPAREN COLON ID EQ expression
+
+    ID  shift, and go to state 80
+
+    type_fields  go to state 81
+
+
+state 72
+
+   49 var_declaration: VAR ID COLON . ID ASSIGN expression
+
+    ID  shift, and go to state 82
+
+
+state 73
+
+   48 var_declaration: VAR ID ASSIGN . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 83
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 74
+
+   42 type_declaration: TYPE ID EQ . type
+
+    ID      shift, and go to state 84
+    LBRACK  shift, and go to state 85
+    ARRAY   shift, and go to state 86
+
+    type  go to state 87
+
+
+state 75
+
+   31 expression_seq: expression . SEMICOLON expression
+   34 expression_kleenes: expression .
+
+    SEMICOLON  shift, and go to state 45
+
+    $default  reduce using rule 34 (expression_kleenes)
+
+
+state 76
+
+   32 expression_seq: expression_seq . SEMICOLON expression
+   35 expression_kleenes: expression_seq .
+
+    SEMICOLON  shift, and go to state 47
+
+    $default  reduce using rule 35 (expression_kleenes)
+
+
+state 77
+
+   33 let_declaration: LET declarations IN expression_kleenes . END
+
+    END  shift, and go to state 88
+
+
+state 78
+
+   30 argument_list: argument_list COMMA expression .
+
+    $default  reduce using rule 30 (argument_list)
+
+
+state 79
+
+   28 make_array_expression: ID LBRACK expression RBRACK OF . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 89
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 80
+
+   46 type_fields: ID . COLON ID
+
+    COLON  shift, and go to state 90
+
+
+state 81
+
+   47 type_fields: type_fields . COMMA ID COLON ID
+   50 func_declaration: FUNCTION ID LPAREN type_fields . RPAREN EQ expression
+   51                 | FUNCTION ID LPAREN type_fields . RPAREN COLON ID EQ expression
+
+    COMMA   shift, and go to state 91
+    RPAREN  shift, and go to state 92
+
+
+state 82
+
+   49 var_declaration: VAR ID COLON ID . ASSIGN expression
+
+    ASSIGN  shift, and go to state 93
+
+
+state 83
+
+   48 var_declaration: VAR ID ASSIGN expression .
+
+    $default  reduce using rule 48 (var_declaration)
+
+
+state 84
+
+   43 type: ID .
+
+    $default  reduce using rule 43 (type)
+
+
+state 85
+
+   44 type: LBRACK . type_fields RBRACK
+
+    ID  shift, and go to state 80
+
+    type_fields  go to state 94
+
+
+state 86
+
+   45 type: ARRAY . OF ID
+
+    OF  shift, and go to state 95
+
+
+state 87
+
+   42 type_declaration: TYPE ID EQ type .
+
+    $default  reduce using rule 42 (type_declaration)
+
+
+state 88
+
+   33 let_declaration: LET declarations IN expression_kleenes END .
+
+    $default  reduce using rule 33 (let_declaration)
+
+
+state 89
+
+   28 make_array_expression: ID LBRACK expression RBRACK OF expression .
+
+    $default  reduce using rule 28 (make_array_expression)
+
+
+state 90
+
+   46 type_fields: ID COLON . ID
+
+    ID  shift, and go to state 96
+
+
+state 91
+
+   47 type_fields: type_fields COMMA . ID COLON ID
+
+    ID  shift, and go to state 97
+
+
+state 92
+
+   50 func_declaration: FUNCTION ID LPAREN type_fields RPAREN . EQ expression
+   51                 | FUNCTION ID LPAREN type_fields RPAREN . COLON ID EQ expression
+
+    COLON  shift, and go to state 98
+    EQ     shift, and go to state 99
+
+
+state 93
+
+   49 var_declaration: VAR ID COLON ID ASSIGN . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 100
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 94
+
+   44 type: LBRACK type_fields . RBRACK
+   47 type_fields: type_fields . COMMA ID COLON ID
+
+    COMMA   shift, and go to state 91
+    RBRACK  shift, and go to state 101
+
+
+state 95
+
+   45 type: ARRAY OF . ID
+
+    ID  shift, and go to state 102
+
+
+state 96
+
+   46 type_fields: ID COLON ID .
+
+    $default  reduce using rule 46 (type_fields)
+
+
+state 97
+
+   47 type_fields: type_fields COMMA ID . COLON ID
+
+    COLON  shift, and go to state 103
+
+
+state 98
+
+   51 func_declaration: FUNCTION ID LPAREN type_fields RPAREN COLON . ID EQ expression
+
+    ID  shift, and go to state 104
+
+
+state 99
+
+   50 func_declaration: FUNCTION ID LPAREN type_fields RPAREN EQ . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 105
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 100
+
+   49 var_declaration: VAR ID COLON ID ASSIGN expression .
+
+    $default  reduce using rule 49 (var_declaration)
+
+
+state 101
+
+   44 type: LBRACK type_fields RBRACK .
+
+    $default  reduce using rule 44 (type)
+
+
+state 102
+
+   45 type: ARRAY OF ID .
+
+    $default  reduce using rule 45 (type)
+
+
+state 103
+
+   47 type_fields: type_fields COMMA ID COLON . ID
+
+    ID  shift, and go to state 106
+
+
+state 104
+
+   51 func_declaration: FUNCTION ID LPAREN type_fields RPAREN COLON ID . EQ expression
+
+    EQ  shift, and go to state 107
+
+
+state 105
+
+   50 func_declaration: FUNCTION ID LPAREN type_fields RPAREN EQ expression .
+
+    $default  reduce using rule 50 (func_declaration)
+
+
+state 106
+
+   47 type_fields: type_fields COMMA ID COLON ID .
+
+    $default  reduce using rule 47 (type_fields)
+
+
+state 107
+
+   51 func_declaration: FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ . expression
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    LET     shift, and go to state 6
+    NIL     shift, and go to state 7
+
+    atom                   go to state 9
+    expression             go to state 108
+    binop_expression       go to state 11
+    make_array_expression  go to state 12
+    let_declaration        go to state 13
+
+
+state 108
+
+   51 func_declaration: FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ expression .
+
+    $default  reduce using rule 51 (func_declaration)

@@ -48,7 +48,8 @@ program
 	: expression
 
 atom
-	: INT
+	: ID
+	| INT
 	| MINUS INT
 	| NIL
 	| STRING

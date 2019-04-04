@@ -1,2 +1,2 @@
-arr[10] of 1
+let var x := 5 in x end
 
