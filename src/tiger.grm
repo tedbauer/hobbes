@@ -51,7 +51,7 @@ program
 
 atom
 	: INT
-	| MINUS INT
+	| MINUS atom
 	| NIL
 	| STRING
 	| BREAK
@@ -166,7 +166,9 @@ var_declaration
 	;
 
 func_declaration
-	: FUNCTION ID LPAREN type_fields RPAREN EQ expression
+	: FUNCTION ID LPAREN RPAREN EQ expression
+	| FUNCTION ID LPAREN RPAREN COLON ID EQ expression
+	| FUNCTION ID LPAREN type_fields RPAREN EQ expression
 	| FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ expression
 	;
 
