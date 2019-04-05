@@ -1,14 +1,26 @@
 parsetest: parsetest.o y.tab.o lex.yy.o errormsg.o util.o absyn.o symbol.o
 	cc -g -o $@ parsetest.o y.tab.o lex.yy.o errormsg.o util.o absyn.o symbol.o
 
+show_ast: show_ast.o y.tab.o lex.yy.o errormsg.o util.o absyn.o symbol.o parse.o prabsyn.o
+	cc -g -o $@ show_ast.o y.tab.o lex.yy.o errormsg.o util.o absyn.o symbol.o parse.o prabsyn.o
+
 lextest: driver.o lex.yy.o errormsg.o util.o
 	cc -g -o $@ driver.o lex.yy.o errormsg.o util.o
 
-driver.o driver.c tokens.h errormsg.h util.h:
+driver.o: driver.c tokens.h errormsg.h util.h
 	cc -g -c driver.c
+
+prabsyn.o: prabsyn.c prabsyn.h
+	cc -g -c prabsyn.c
+
+parse.o: parse.c parse.h
+	cc -g -c parse.c
 
 parsetest.o: parsetest.c errormsg.h util.h
 	cc -g -c parsetest.c
+
+show_ast.o: show_ast.c errormsg.h util.h
+	cc -g -c show_ast.c
 
 symbol.o: symbol.c symbol.h
 	cc -g -c symbol.c

@@ -16,7 +16,7 @@ void yyerror(char *s)
 	EM_error(EM_tokPos, "%s", s);
 }
 
-int yydebug = 1;
+//int yydebug = 1;
 
 %}
 
