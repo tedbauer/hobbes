@@ -139,19 +139,23 @@ make_record_expression
 
 assignment_list
 	: ID EQ expression
-		{ $$ = A_EfieldList(A_Efield(S_Symbol($1), $3), NULL);
+		{ $$ = A_EfieldList(A_Efield(S_Symbol($1), $3), NULL); }
 	| assignment_list COMMA ID EQ expression
-		{ $$ = A_EfieldList(A_Efield(S_Symbol($3), $5), $1);
+		{ $$ = A_EfieldList(A_Efield(S_Symbol($3), $5), $1); }
 	;
 
 argument_list
 	: expression
+		{ $$ = A_ExpList($1, NULL); }
 	| argument_list COMMA expression
+		{ $$ = A_ExpList($3, $1); }
 	;
 
 expression_seq
 	: expression SEMICOLON expression
+		{ $$ = A_SeqExp(EM_tokPos, A_ExpList($1, A_ExpList($3, NULL))); }
 	| expression_seq SEMICOLON expression
+		{ $$ = A_SeqExp(EM_tokPos, A_ExpList($3, $1)); }
 	;
 
 let_declaration
@@ -163,7 +167,9 @@ expression_kleenes
 	: expression
 		{ $$ = $1; }
 	| expression_seq
-	|
+		{ $$ = $1; }
+	| /* NIL */
+		{ $$ = A_NilExp(EM_tokPos); }
 	;
 
 declarations
@@ -189,20 +195,27 @@ type_declaration
 
 type
 	: ID
-		{ $$ = A_NameTyList(A_Namety(S_Symbol($1), A_NameTy(EM_tokPos, S_Symbol($1)), NULL);
+		{ $$ = A_NameTyList(A_NameTy(EM_tokPos, $1), NULL); }
 	| LBRACE type_fields RBRACE
+		{ $$ = A_NameTyList(A_RecordTy(EM_tokPos, $2), NULL); }
 	| ARRAY OF ID
+		{ $$ = A_NameTyList(A_ArrayTy(EM_tokPos, $3), NULL); }
 	;
 
 type_fields
 	: ID COLON ID
+		{ $$ = A_FieldList(A_Field(EM_tokPos, S_Symbol($1), S_Symbol($3)), NULL); }
 	| type_fields COMMA ID COLON ID
+		{ $$ = A_FieldList(A_Field(EM_tokPos, S_Symbol($3), S_Symbol($5)), $1); }
 	;
 
 lvalue_expression
 	: ID
+		{ $$ = A_SimpleVar(EM_tokPos, S_Symbol($1)); }
 	| lvalue_expression DOT ID
+		{ $$ = A_FieldVar(EM_tokPos, $1, S_Symbol($3)); }
 	| lvalue_expression LBRACK expression RBRACK
+		{ $$ = A_SubScriptVar(EM_tokPos, $1, S_Symbol($3)); }
 	;
 
 lvalue_assignment
