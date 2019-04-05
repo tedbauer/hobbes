@@ -3,18 +3,14 @@ Tigger is a work in progress compiler for the Tiger language.
 
 ## Usage
 
-Tigger requires [Lex and Yacc][lexyacc].
+Tigger requires [Bison and Flex][bflex].
 
-There are a few helpful commands:
-- `make lextest`: build executable `lextest`, which you can run with
-  `./lextest example.tiger` to see the tokens that get lexed.
-- `make parsetest`: build executable `parsetest`. You can either run
-  `./parsetest example.tiger` to check if `example.tiger` was parsed
-  correctly, or you can run `./parsetest` and it will check every file
-  in `testcases/`.
+Type `make show_ast` to build executable `show_ast`. Then, supply it a
+Tiger source file to see the generated AST. For example, you can try out
+`show_ast ../testcases/test1.tig`.
 
 ## Links
 - [Project Starter Files][sfiles]
 
 [sfiles]: https://www.cs.princeton.edu/~appel/modern/c/project.html
-[lexyacc]: http://dinosaur.compilertools.net/#yacc
+[bflex]: http://dinosaur.compilertools.net/
