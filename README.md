@@ -1,5 +1,6 @@
 # Tigger
-Tigger is a work in progress compiler for the Tiger language.
+Tigger is a work in progress compiler for the Tiger language. Track its
+progress with [this issue][tracker].
 
 ## Usage
 
@@ -15,3 +16,4 @@ simple program:
 
 [sfiles]: https://www.cs.princeton.edu/~appel/modern/c/project.html
 [bflex]: http://dinosaur.compilertools.net/
+[tracker]: https://github.com/tedbauer/tigger/issues/1
