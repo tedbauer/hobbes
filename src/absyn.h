@@ -29,7 +29,7 @@ struct A_var_ {
 	A_pos pos;
 	union {
 		S_symbol simple;
-		struct { A_var var; S_symbol sym } field;
+		struct { A_var var; S_symbol sym; } field;
 		struct { A_var var; A_exp exp; } subscript;
 	} u;
 };
@@ -89,7 +89,7 @@ struct A_fundec_ {
 };
 
 struct A_fundecList_ { A_fundec head; A_fundecList tail; };
-struct A_decList_ { A_dec head; A_decList tail };
+struct A_decList_ { A_dec head; A_decList tail; };
 struct A_namety_ { S_symbol name; A_ty ty; };
 struct A_nametyList_ { A_namety head; A_nametyList tail; };
 struct A_efield_ { S_symbol name; A_exp exp; };
