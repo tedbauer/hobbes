@@ -54,6 +54,12 @@ int yydebug = 1;
 %nonassoc THEN
 %nonassoc ELSE
 
+%type <expList> argument_list
+%type <efieldList> assignment_list
+%type <decList> declarations
+%type <nameTyList> type
+%type <fieldList> type_fields
+
 %type <exp>
 	program atom expression binop_expression
 	lvalue_expression expression_seq
@@ -63,24 +69,9 @@ int yydebug = 1;
 	expression_kleenes let_declaration
 	lvalue_assignment
 
-%type <expList>
-	argument_list
-
-%type <efieldList>
-	assignment_list
-
 %type <dec>
 	declaration type_declaration var_declaration
 	func_declaration
-
-%type <decList>
-	declarations
-
-%type <nameTyList>
-	type
-
-%type <fieldList>
-	type_fields
 
 %start program
 
@@ -235,11 +226,11 @@ type_declaration
 
 type
 	: ID
-		{ $$ = A_NameTyList(A_NameTy(EM_tokPos, $1), NULL); }
+		{ $$ = A_NametyList(A_NameTy(EM_tokPos, $1), NULL); }
 	| LBRACE type_fields RBRACE
-		{ $$ = A_NameTyList(A_RecordTy(EM_tokPos, $2), NULL); }
+		{ $$ = A_NametyList(A_RecordTy(EM_tokPos, $2), NULL); }
 	| ARRAY OF ID
-		{ $$ = A_NameTyList(A_ArrayTy(EM_tokPos, $3), NULL); }
+		{ $$ = A_NametyList(A_ArrayTy(EM_tokPos, $3), NULL); }
 	;
 
 type_fields
@@ -255,7 +246,7 @@ lvalue_expression
 	| lvalue_expression DOT ID
 		{ $$ = A_FieldVar(EM_tokPos, $1, S_Symbol($3)); }
 	| lvalue_expression LBRACK expression RBRACK
-		{ $$ = A_SubScriptVar(EM_tokPos, $1, S_Symbol($3)); }
+		{ $$ = A_SubscriptVar(EM_tokPos, $1, S_Symbol($3)); }
 	;
 
 lvalue_assignment

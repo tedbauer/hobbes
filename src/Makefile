@@ -1,5 +1,5 @@
-parsetest: parsetest.o y.tab.o lex.yy.o errormsg.o util.o
-	cc -g -o $@ parsetest.o y.tab.o lex.yy.o errormsg.o util.o
+parsetest: parsetest.o y.tab.o lex.yy.o errormsg.o util.o absyn.o symbol.o
+	cc -g -o $@ parsetest.o y.tab.o lex.yy.o errormsg.o util.o absyn.o symbol.o
 
 lextest: driver.o lex.yy.o errormsg.o util.o
 	cc -g -o $@ driver.o lex.yy.o errormsg.o util.o
@@ -9,6 +9,12 @@ driver.o driver.c tokens.h errormsg.h util.h:
 
 parsetest.o: parsetest.c errormsg.h util.h
 	cc -g -c parsetest.c
+
+symbol.o: symbol.c symbol.h
+	cc -g -c symbol.c
+
+absyn.o: absyn.c absyn.h
+	cc -g -c absyn.c
 
 y.tab.o: y.tab.c
 	cc -g -c y.tab.c
