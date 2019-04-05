@@ -26,6 +26,12 @@ int yydebug = 1;
 	string sval;
 	A_var var;
 	A_exp exp;
+	A_expList expList;
+	A_efieldList efieldList;
+	A_dec dec;
+	A_decList decList;
+	A_nametyList nameTyList;
+	A_fieldList fieldList;
 }
 
 %token <sval> ID STRING
@@ -57,6 +63,25 @@ int yydebug = 1;
 	expression_kleenes let_declaration
 	lvalue_assignment
 
+%type <expList>
+	argument_list
+
+%type <efieldList>
+	assignment_list
+
+%type <dec>
+	declaration type_declaration var_declaration
+	func_declaration
+
+%type <decList>
+	declarations
+
+%type <nameTyList>
+	type
+
+%type <fieldList>
+	type_fields
+
 %start program
 
 %%
@@ -67,7 +92,7 @@ program
 
 atom
 	: INT
-		{ $$ = $1; }
+		{ $$ = A_IntExp(EM_tokPos, $1); }
 	| MINUS atom
 		{ $$ = A_OpExp(EM_tokPos, A_minusOp, A_IntExp(EM_tokPos, 0), A_IntExp(EM_tokPos, $2)); }
 	| NIL
@@ -253,7 +278,7 @@ func_declaration
 	| FUNCTION ID LPAREN type_fields RPAREN EQ expression
 		{ $$ = A_Fundec(EM_tokPos, $2, $4, NULL, $7); }
 	| FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ expression
-		{ $$ = A_Fundec(EM_tokPos, $2, A_FieldList(), $7, $9); }
+		{ $$ = A_Fundec(EM_tokPos, $2, $4, $7, $9); }
 	;
 
 for_expression
