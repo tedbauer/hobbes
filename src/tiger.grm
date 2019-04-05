@@ -62,6 +62,7 @@ atom
 	| BREAK
 		{ $$ = A_BreakExp(EM_tokPos); }
 	| LPAREN RPAREN
+		{ $$ = NilExp(EM_tokPos); }
 	| lvalue_expression
 		{ $$ = $1; }
 	| LPAREN expression_seq RPAREN
@@ -139,22 +140,22 @@ expression_kleenes
 	;
 
 declarations
-	: declaration
+	: declaration              { $$ = $1; }
 	| declarations declaration
 	;
 
 declaration
-	: type_declaration
-	| var_declaration
-	| func_declaration
+	: type_declaration         { $$ = $1; }
+	| var_declaration          { $$ = $1; }
+	| func_declaration         { $$ = $1; }
 	;
 
 type_declaration
-	: TYPE ID EQ type
+	: TYPE ID EQ type { $$ = A_TypeDec(EM_tokPos, $4); }
 	;
 
 type
-	: ID
+	: ID                        { $$ = A_Namety(S_Symbol($1), )
 	| LBRACE type_fields RBRACE
 	| ARRAY OF ID
 	;
@@ -188,16 +189,20 @@ func_declaration
 
 for_expression
 	: FOR ID ASSIGN expression TO expression DO expression
+		{ $$ = A_ForExp(EM_tokPos, S_Symbol($2), $4, $6, $8); }
 	;
 
 while_expression
 	: WHILE expression DO expression
+		{ $$ = A_WhileExp(EM_tokPos, $2, $4); }
 	;
 
 if_then_expression
 	: IF expression THEN expression
+		{ $$ = A_IfExp(EM_tokPos, $2, $4, A_NilExp(EM_tokPos)); }
 	;
 
 if_then_else_expression
 	: IF expression THEN expression ELSE expression
+		{ $$ = A_IfExp(EM_tokPos, $2, $4, $6); }
 	;
