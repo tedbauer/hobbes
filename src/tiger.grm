@@ -186,7 +186,7 @@ expression_seq
 	: expression SEMICOLON expression
 		{ $$ = A_SeqExp(EM_tokPos, A_ExpList($1, A_ExpList($3, NULL))); }
 	| expression_seq SEMICOLON expression
-		{ $$ = A_SeqExp(EM_tokPos, A_ExpList($3, $1)); }
+		{ $$ = A_SeqExp(EM_tokPos, A_ExpList($3, $1->u.seq)); }
 	;
 
 let_declaration
@@ -205,7 +205,7 @@ expression_kleenes
 
 declarations
 	: declaration
-		{ $$ = $1; }
+		{ $$ = A_DecList($1, NULL); }
 	| declarations declaration
 		{ $$ = A_DecList($2, $1); }
 	;
@@ -226,7 +226,7 @@ type_declaration
 
 type
 	: ID
-		{ $$ = A_NametyList(A_NameTy(EM_tokPos, $1), NULL); }
+		{ $$ = A_NametyList(A_NameTy(EM_tokPos, S_Symbol($1)), NULL); }
 	| LBRACE type_fields RBRACE
 		{ $$ = A_NametyList(A_RecordTy(EM_tokPos, $2), NULL); }
 	| ARRAY OF ID
