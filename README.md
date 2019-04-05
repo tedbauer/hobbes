@@ -4,8 +4,9 @@ progress with [this issue][tracker].
 
 ## Usage
 
-Tigger requires [Bison and Flex][bflex]. Try generating an AST from a
-simple program:
+Tigger requires [Bison and Flex][bflex]. I recommend installing them with
+[Homebrew][brew]. Once you've done that, you can try generating an AST from
+a simple program:
 
 	$ cd src
 	$ make show_ast
@@ -17,3 +18,4 @@ simple program:
 [sfiles]: https://www.cs.princeton.edu/~appel/modern/c/project.html
 [bflex]: http://dinosaur.compilertools.net/
 [tracker]: https://github.com/tedbauer/tigger/issues/1
+[brew]: https://brew.sh/
