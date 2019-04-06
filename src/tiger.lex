@@ -36,6 +36,7 @@ void adjust()
 <BUILD_STRING>\\               { adjust(); strAcc = StringAppend(strAcc, yytext); BEGIN ESCAPE_SEQ; }
 <BUILD_STRING>[^\"\\]          { adjust(); strAcc = StringAppend(strAcc, yytext); }
 <ESCAPE_SEQ>[nt\\\"]           { adjust(); strAcc = StringAppend(strAcc, yytext); BEGIN BUILD_STRING; }
+<ESCAPE_SEQ>\^c                { adjust(); strAcc = StringAppend(strAcc, yytext); BEGIN BUILD_STRING; }
 <BUILD_STRING>\"               { adjust(); yylval.sval = String(strAcc); BEGIN NORMAL; return STRING; }
 
 <NORMAL>"+"                    { adjust(); return PLUS; }
@@ -90,7 +91,7 @@ void adjust()
 <NORMAL>[0-9]+                 { adjust(); yylval.ival = atoi(yytext); return INT; }
 
 <NORMAL>[ \t]                  { adjust(); continue; }
-<NORMAL>\r\n                     { adjust(); EM_newline(); continue; }
+<NORMAL>\r\n                   { adjust(); EM_newline(); continue; }
 <NORMAL>.                      { adjust(); EM_error(EM_tokPos, "illegal token"); }
 
 .                              { BEGIN NORMAL; yyless(0); }
