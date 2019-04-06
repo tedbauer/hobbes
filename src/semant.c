@@ -24,9 +24,16 @@ struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
 	}
 }
 
+struct expty transVar(S_table venv, S_table tenv, A_var v)
+{
+	switch (v->kind) {
+		default: assert(0);
+	}
+}
+
 struct expty transExp(S_table venv, S_table tenv, A_exp a)
 {
-	switch(a->kind) {
+	switch (a->kind) {
 		case A_varExp: return transVar(venv, tenv, a->u.var);
 		case A_nilExp: return Ty_Nil();
 		case A_intExp: return Ty_Int();
