@@ -5,6 +5,7 @@
 #include "../include/translate.h"
 #include "../include/types.h"
 #include "../include/semant.h"
+#include "../include/env.h"
 
 struct expty expTy(Tr_exp exp, Ty_ty ty) {
 	struct expty e;
@@ -34,9 +35,23 @@ struct expty transCallExp(S_table venv, S_table tenv, A_exp a)
 
 }
 
+struct expty transSimpleVar(S_table venv, S_table tenv, A_var a)
+{
+	E_enventry x = S_look(venv, a->u.simple);
+	if (x && x->kind == E_varEntry) {
+		return expTy(NULL, actual_ty(x->u.var.ty));
+	} else {
+		EM_error(a->pos, "undefined variable %s", S_name(a->u.simple));
+		return expTy(NULL, Ty_Int());
+	}
+}
+
 struct expty transVar(S_table venv, S_table tenv, A_var v)
 {
 	switch (v->kind) {
+		case A_simpleVar: transSimpleVar(venv, tenv, v);
+		case A_fieldVar: assert(0);
+		case A_subscriptVar: assert(0);
 		default: assert(0);
 	}
 }
@@ -62,4 +77,10 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 		default: assert(0);
 	}
 	assert(0);
+}
+
+void SEM_transProg(A_exp prog)
+{
+	// Typecheck the AST
+	transExp(E_base_venv(), E_base_tenv(), prog);
 }

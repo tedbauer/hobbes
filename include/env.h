@@ -11,5 +11,5 @@ struct E_enventry_ {
 E_enventry E_VarEntry(Ty_ty ty);
 E_enventry E_FunEntry(Ty_tyList formals, Ty_ty result);
 
-S_table E_base_tenv();
-S_table E_base_venv();
+S_table E_base_tenv(void);
+S_table E_base_venv(void);
