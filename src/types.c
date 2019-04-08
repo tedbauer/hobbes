@@ -72,6 +72,12 @@ Ty_fieldList Ty_FieldList(Ty_field head, Ty_fieldList tail)
 	return p;
 }
 
+Ty_ty actual_ty(Ty_ty t)
+{
+	assert(0);
+	return NULL;
+}
+
 /* printing functions - used for debugging */
 static char str_ty[][12] = {
 	"ty_record", "ty_nil", "ty_int", "ty_string",

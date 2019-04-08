@@ -112,6 +112,11 @@ E_enventry E_ExitEntry()
 }
 
 
+S_table E_base_venv()
+{
+	return S_empty();
+}
+
 S_table E_base_tenv()
 {
 	S_table t = S_empty();
