@@ -1,6 +1,6 @@
-#include "util.h"
-#include "symbol.h"
-#include "absyn.h"
+#include "../include/util.h"
+#include "../include/symbol.h"
+#include "../include/absyn.h"
 
 A_var A_SimpleVar(A_pos pos, S_symbol sym)
 {

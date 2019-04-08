@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include "util.h"
-#include "errormsg.h"
+#include "../include/util.h"
+#include "../include/errormsg.h"
 
 bool anyErrors = FALSE;
 

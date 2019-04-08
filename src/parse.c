@@ -3,11 +3,11 @@
  */
 
 #include <stdio.h>
-#include "util.h"
-#include "symbol.h"
-#include "absyn.h"
-#include "errormsg.h"
-#include "parse.h"
+#include "../include/util.h"
+#include "../include/symbol.h"
+#include "../include/absyn.h"
+#include "../include/errormsg.h"
+#include "../include/parse.h"
 
 extern int yyparse(void);
 extern A_exp absyn_root;

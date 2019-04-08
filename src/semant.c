@@ -1,5 +1,10 @@
-#include "semant.h"
-#include "types.h"
+#include "../include/util.h"
+#include "../include/errormsg.h"
+#include "../include/symbol.h"
+#include "../include/absyn.h"
+#include "../include/translate.h"
+#include "../include/types.h"
+#include "../include/semant.h"
 
 struct expty expTy(Tr_exp exp, Ty_ty ty) {
 	struct expty e;
@@ -24,6 +29,11 @@ struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
 	}
 }
 
+struct expty transCallExp(S_table venv, S_table tenv, A_exp a)
+{
+
+}
+
 struct expty transVar(S_table venv, S_table tenv, A_var v)
 {
 	switch (v->kind) {
@@ -35,9 +45,9 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 {
 	switch (a->kind) {
 		case A_varExp: return transVar(venv, tenv, a->u.var);
-		case A_nilExp: return Ty_Nil();
-		case A_intExp: return Ty_Int();
-		case A_stringExp: return Ty_String();
+		case A_nilExp: return expTy(NULL, Ty_Nil());
+		case A_intExp: return expTy(NULL, Ty_Int());
+		case A_stringExp: return expTy(NULL, Ty_String());
 		case A_callExp: assert(0);
 		case A_opExp: return transOpExp(venv, tenv, a);
 		case A_recordExp: assert(0);

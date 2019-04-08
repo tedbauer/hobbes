@@ -4,10 +4,10 @@
  */
 
 #include <stdio.h>
-#include "util.h"
-#include "symbol.h" /* symbol table data structures */
-#include "absyn.h"  /* abstract syntax data structures */
-#include "prabsyn.h" /* function prototype */
+#include "../include/util.h"
+#include "../include/symbol.h" /* symbol table data structures */
+#include "../include/absyn.h"  /* abstract syntax data structures */
+#include "../include/prabsyn.h" /* function prototype */
 
 /* local function prototypes */
 static void pr_var(FILE *out, A_var v, int d);
