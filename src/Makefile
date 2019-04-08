@@ -3,7 +3,7 @@
 CFLAGS = -g
 
 IDIR = ../include
-ODIR = obj
+ODIR = _build/obj
 
 _DEPS = absyn.h errormsg.h prabsyn.h symbol.h tokens.h types.h env.h parse.h semant.h table.h translate.h util.h
 DEPS = $(patsubst %,$(IDIR)/%, $(_DEPS))
@@ -25,4 +25,4 @@ $(ODIR)/%.o: %.c $(DEPS)
 	cc -c -o $@ $< $(CFLAGS)
 
 clean:
-	rm -f $(ODIR)/*.o *~ tigger y.tab.c lex.yy.c y.output
+	rm -f $(ODIR)/*.o *~ tigger y.tab.* lex.yy.c y.output
