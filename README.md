@@ -9,8 +9,8 @@ Tigger requires [Bison and Flex][bflex]. I recommend installing them with
 a simple program:
 
 	$ cd src
-	$ make show_ast
-	$ ./show_ast ../testcases/test1.tig
+	$ make
+	$ ./tigger ../testcases/test1.tig
 
 ## Links
 - [Project Starter Files][sfiles]
