@@ -1,7 +1,7 @@
-#include "env.h"
-#include "symbol.h"
-#include "util.h"
-#include "types.h"
+#include "../include/util.h"
+#include "../include/symbol.h"
+#include "../include/types.h"
+#include "../include/env.h"
 
 E_enventry E_VarEntry(Ty_ty ty)
 {
@@ -114,21 +114,21 @@ E_enventry E_ExitEntry()
 
 S_table E_base_tenv()
 {
-	S_table s = S_empty();
+	S_table t = S_empty();
 
-	S_enter(S_Symbol("int"), Ty_Int);
-	S_enter(S_Symbol("string"), Ty_Int);
+	S_enter(t, S_Symbol("int"), Ty_Int);
+	S_enter(t, S_Symbol("string"), Ty_Int);
 
-	S_enter(S_Symbol("print"), E_PrintEntry());
-	S_enter(S_Symbol("flush"), E_FlushEntry());
-	S_enter(S_Symbol("getchar"), E_GetcharEntry());
-	S_enter(S_Symbol("ord"), E_OrdEntry());
-	S_enter(S_Symbol("chr"), E_ChrEntry());
-	S_enter(S_Symbol("size"), E_SizeEntry());
-	S_enter(S_Symbol("substring"), E_SubstringEntry());
-	S_enter(S_Symbol("concat"), E_ConcatEntry());
-	S_enter(S_Symbol("not"), E_NotEntry());
-	S_enter(S_Symbol("exit"), E_ExitEntry());
+	S_enter(t, S_Symbol("print"), E_PrintEntry());
+	S_enter(t, S_Symbol("flush"), E_FlushEntry());
+	S_enter(t, S_Symbol("getchar"), E_GetcharEntry());
+	S_enter(t, S_Symbol("ord"), E_OrdEntry());
+	S_enter(t, S_Symbol("chr"), E_ChrEntry());
+	S_enter(t, S_Symbol("size"), E_SizeEntry());
+	S_enter(t, S_Symbol("substring"), E_SubstringEntry());
+	S_enter(t, S_Symbol("concat"), E_ConcatEntry());
+	S_enter(t, S_Symbol("not"), E_NotEntry());
+	S_enter(t, S_Symbol("exit"), E_ExitEntry());
 
-	return s;
+	return t;
 }

@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
-#include "util.h"
-#include "table.h"
-#include "symbol.h"
+#include "../include/util.h"
+#include "../include/table.h"
+#include "../include/symbol.h"
 
 struct S_symbol_ { string name; S_symbol next; };
 

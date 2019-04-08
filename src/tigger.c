@@ -1,14 +1,14 @@
 #include <stdio.h>
-#include "util.h"
-#include "symbol.h"
-#include "absyn.h"
-#include "parse.h"
-#include "prabsyn.h"
-#include "errormsg.h"
+#include "../include/util.h"
+#include "../include/symbol.h"
+#include "../include/absyn.h"
+#include "../include/parse.h"
+#include "../include/prabsyn.h"
+#include "../include/errormsg.h"
 
 int main(int argc, char **argv) {
 	if (argc != 2) {
-		fprintf(stderr, "usage: show_ast filename");
+		fprintf(stderr, "usage: show_ast filename\n");
 		exit(1);
 	}
 

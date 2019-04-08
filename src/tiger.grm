@@ -1,9 +1,9 @@
 %{
 #include <stdio.h>
-#include "util.h"
-#include "errormsg.h"
-#include "symbol.h"
-#include "absyn.h"
+#include "../include/util.h"
+#include "../include/errormsg.h"
+#include "../include/symbol.h"
+#include "../include/absyn.h"
 
 #define YYDEBUG 1
 

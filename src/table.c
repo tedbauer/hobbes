@@ -4,8 +4,8 @@
  */
 
 #include <stdio.h>
-#include "util.h"
-#include "table.h"
+#include "../include/util.h"
+#include "../include/table.h"
 
 #define TABSIZE 127
 

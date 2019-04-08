@@ -11,7 +11,7 @@ struct Ty_ty_ {
 	union {
 		Ty_fieldList record;
 		Ty_ty array;
-		struct { S_Symbol sym; Ty_ty ty; } name;
+		struct { S_symbol sym; Ty_ty ty; } name;
 	} u;
 };
 
