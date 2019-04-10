@@ -14,6 +14,22 @@ struct expty expTy(Tr_exp exp, Ty_ty ty) {
 	return e;
 }
 
+void transVarDec(S_table venv, S_table tenv, A_dec d)
+{
+	struct expty e = transExp(venv, tenv, d->u.var.init);
+	S_enter(venv, d->u.var.var, E_VarEntry(e.ty));
+}
+
+void transDec(S_table venv, S_table tenv, A_dec d)
+{
+	switch(d->kind) {
+		case A_functionDec: assert(0);
+		case A_varDec: transVarDec(venv, tenv, d); break;
+		case A_typeDec: assert(0);
+		default: assert(0);
+	}
+}
+
 struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
 {
 	A_oper oper = a->u.op.oper;
@@ -28,20 +44,42 @@ struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
 		}
 		return expTy(NULL, Ty_Int());
 	}
+	assert(0);
+	return expTy(NULL, NULL);
 }
 
 struct expty transCallExp(S_table venv, S_table tenv, A_exp a)
 {
-
+	assert(0);
+	return expTy(NULL, NULL);
 }
 
-struct expty transSimpleVar(S_table venv, S_table tenv, A_var a)
+struct expty transFieldVar(S_table venv, S_table tenv, A_var v)
 {
-	E_enventry x = S_look(venv, a->u.simple);
+	assert(v->kind == A_fieldVar);
+	S_symbol accessorSym = v->u.field.sym;
+	Ty_ty recordType = S_look(venv, v->u.field.var->u.simple);
+	Ty_ty accessorType = S_look(venv, accessorSym);
+	if (recordType->kind != Ty_record) {
+		EM_error(v->pos, "accessed field of non-record %s", S_name(v->u.simple));
+	}
+	Ty_fieldList fields = recordType->u.record;
+	Ty_field currField = fields->head;
+	while (currField != NULL) {
+		if (currField->name == accessorSym) {
+			break;
+		}
+	}
+	return expTy(NULL, currField->ty);
+}
+
+struct expty transSimpleVar(S_table venv, S_table tenv, A_var v)
+{
+	E_enventry x = S_look(venv, v->u.simple);
 	if (x && x->kind == E_varEntry) {
-		return expTy(NULL, actual_ty(x->u.var.ty));
+		return expTy(NULL, actual_ty(x->u.var.ty, tenv));
 	} else {
-		EM_error(a->pos, "undefined variable %s", S_name(a->u.simple));
+		EM_error(v->pos, "undefined variable %s", S_name(v->u.simple));
 		return expTy(NULL, Ty_Int());
 	}
 }
@@ -50,10 +88,25 @@ struct expty transVar(S_table venv, S_table tenv, A_var v)
 {
 	switch (v->kind) {
 		case A_simpleVar: transSimpleVar(venv, tenv, v);
-		case A_fieldVar: assert(0);
+		case A_fieldVar: transFieldVar(venv, tenv, v);
 		case A_subscriptVar: assert(0);
 		default: assert(0);
 	}
+}
+
+void transDecs(S_table venv, S_table tenv, A_decList decs)
+{
+	A_dec currDec = decs->head;
+	while (currDec != NULL) {
+		transDec(venv, tenv, currDec);
+		currDec = decs->tail->head;
+	}
+}
+
+struct expty transLetExp(S_table venv, S_table tenv, A_exp a)
+{
+	transDecs(venv, tenv, a->u.let.decs);
+	return transExp(venv, tenv, a->u.let.body);
 }
 
 struct expty transExp(S_table venv, S_table tenv, A_exp a)
@@ -72,7 +125,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 		case A_whileExp: assert(0);
 		case A_forExp: assert(0);
 		case A_breakExp: assert(0);
-		case A_letExp: assert(0);
+		case A_letExp: transLetExp(venv, tenv, a);
 		case A_arrayExp: assert(0);
 		default: assert(0);
 	}
