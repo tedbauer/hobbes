@@ -72,10 +72,13 @@ Ty_fieldList Ty_FieldList(Ty_field head, Ty_fieldList tail)
 	return p;
 }
 
-Ty_ty actual_ty(Ty_ty t)
+Ty_ty actual_ty(Ty_ty orig_typ, S_table tab)
 {
-	assert(0);
-	return NULL;
+	Ty_ty typ = orig_typ;
+	while (typ->kind == Ty_name) {
+		typ = S_look(tab, typ->u.name.sym);
+	}
+	return typ;
 }
 
 /* printing functions - used for debugging */

@@ -112,18 +112,18 @@ E_enventry E_ExitEntry()
 }
 
 
-S_table E_base_venv()
-{
-	return S_empty();
-}
-
 S_table E_base_tenv()
 {
 	S_table t = S_empty();
-
 	S_enter(t, S_Symbol("int"), Ty_Int);
 	S_enter(t, S_Symbol("string"), Ty_Int);
+	return S_empty();
+}
 
+S_table E_base_venv()
+{
+	S_table t = S_empty();
+	/*
 	S_enter(t, S_Symbol("print"), E_PrintEntry());
 	S_enter(t, S_Symbol("flush"), E_FlushEntry());
 	S_enter(t, S_Symbol("getchar"), E_GetcharEntry());
@@ -134,6 +134,6 @@ S_table E_base_tenv()
 	S_enter(t, S_Symbol("concat"), E_ConcatEntry());
 	S_enter(t, S_Symbol("not"), E_NotEntry());
 	S_enter(t, S_Symbol("exit"), E_ExitEntry());
-
+	*/
 	return t;
 }
