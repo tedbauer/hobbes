@@ -14,19 +14,8 @@ struct expty expTy(Tr_exp exp, Ty_ty ty) {
 	return e;
 }
 
-/* FIXME(ted): why is the RHS of a type declaration wrapped
- * in an A_nametyList? Here, I'm making the assumption that
- * these are _always_ singleton lists -- a fact that is weird
- * and could be wrong. */
-void transTyDec(S_table venv, S_table tenv, A_dec d)
-{
-	assert(d->kind == A_typeDec);
-	S_enter(tenv, d->u.type->head->name, d->u.type->head->ty);
-}
-
 void transVarDec(S_table venv, S_table tenv, A_dec d)
 {
-	assert(d->kind == A_varDec);
 	struct expty e = transExp(venv, tenv, d->u.var.init);
 	S_enter(venv, d->u.var.var, E_VarEntry(e.ty));
 }
@@ -36,7 +25,7 @@ void transDec(S_table venv, S_table tenv, A_dec d)
 	switch(d->kind) {
 		case A_functionDec: assert(0);
 		case A_varDec: transVarDec(venv, tenv, d); break;
-		case A_typeDec: transTyDec(venv, tenv, d); break;
+		case A_typeDec: assert(0);
 		default: assert(0);
 	}
 }
@@ -98,8 +87,8 @@ struct expty transSimpleVar(S_table venv, S_table tenv, A_var v)
 struct expty transVar(S_table venv, S_table tenv, A_var v)
 {
 	switch (v->kind) {
-		case A_simpleVar: return transSimpleVar(venv, tenv, v);
-		case A_fieldVar: return transFieldVar(venv, tenv, v);
+		case A_simpleVar: transSimpleVar(venv, tenv, v);
+		case A_fieldVar: transFieldVar(venv, tenv, v);
 		case A_subscriptVar: assert(0);
 		default: assert(0);
 	}
@@ -107,9 +96,10 @@ struct expty transVar(S_table venv, S_table tenv, A_var v)
 
 void transDecs(S_table venv, S_table tenv, A_decList decs)
 {
-	if (decs) {
-		transDec(venv, tenv, decs->head);
-		transDecs(venv, tenv, decs->tail);
+	A_dec currDec = decs->head;
+	while (currDec != NULL) {
+		transDec(venv, tenv, currDec);
+		currDec = decs->tail->head;
 	}
 }
 
@@ -135,8 +125,8 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 		case A_whileExp: assert(0);
 		case A_forExp: assert(0);
 		case A_breakExp: assert(0);
-		case A_letExp: return transLetExp(venv, tenv, a);
-		case A_arrayExp: return expTy(NULL, Ty_Array(S_look(tenv, a->u.array.typ)));
+		case A_letExp: transLetExp(venv, tenv, a);
+		case A_arrayExp: assert(0);
 		default: assert(0);
 	}
 	assert(0);
@@ -146,5 +136,4 @@ void SEM_transProg(A_exp prog)
 {
 	// Typecheck the AST
 	transExp(E_base_venv(), E_base_tenv(), prog);
-	printf("Program typechecks!\n");
 }
