@@ -207,8 +207,8 @@ expression_kleenes
 declarations
 	: declaration
 		{ $$ = A_DecList($1, NULL); }
-	| declarations declaration
-		{ $$ = A_DecList($2, $1); }
+	| declaration declarations
+		{ $$ = A_DecList($1, $2); }
 	;
 
 declaration
