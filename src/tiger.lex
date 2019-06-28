@@ -1,4 +1,5 @@
-%{ #include <string.h>
+%{
+#include <string.h>
 #include "../include/util.h"
 #include "../include/tokens.h"
 #include "../include/errormsg.h"
