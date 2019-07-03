@@ -7,11 +7,25 @@
 #include "../include/semant.h"
 #include "../include/env.h"
 
-struct expty expTy(Tr_exp exp, Ty_ty ty) {
+struct expty expTy(Tr_exp exp, Ty_ty ty)
+{
 	struct expty e;
 	e.exp = exp;
 	e.ty = ty;
 	return e;
+}
+
+Ty_ty transTy(S_table tenv, A_ty a)
+{
+	/*
+	switch (a->kind) {
+		case A_nameTy: return Ty_Name(a->u.name, ); break;
+		case A_recordTy: return Ty_Record(); break;
+		case A_arrayTy: transArrayTy(a); break;
+	}
+	*/
+	assert(0); // FIXME implement this func
+	return NULL;
 }
 
 /* FIXME(ted): why is the RHS of a type declaration wrapped
@@ -21,7 +35,8 @@ struct expty expTy(Tr_exp exp, Ty_ty ty) {
 void transTyDec(S_table venv, S_table tenv, A_dec d)
 {
 	assert(d->kind == A_typeDec);
-	S_enter(tenv, d->u.type->head->name, d->u.type->head->ty);
+	Ty_ty t = transTy(tenv, d->u.type->head->ty);
+	S_enter(tenv, d->u.type->head->name, E_VarEntry(t));
 }
 
 void transVarDec(S_table venv, S_table tenv, A_dec d)
@@ -41,6 +56,26 @@ void transDec(S_table venv, S_table tenv, A_dec d)
 	}
 }
 
+struct expty transCallExp(S_table venv, S_table tenv, A_exp a)
+{
+	assert(0);
+	return expTy(NULL, NULL);
+}
+
+struct expty transLetExp(S_table venv, S_table tenv, A_exp a)
+{
+	S_beginScope(venv);
+	S_beginScope(tenv);
+	A_decList d;
+	for (d = a->u.let.decs; d; d = d->tail) {
+		transDec(venv, tenv, d->head);
+	}
+	struct expty exp = transExp(venv, tenv, a->u.let.body);
+	S_endScope(venv);
+	S_endScope(tenv);
+	return exp;
+}
+
 struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
 {
 	A_oper oper = a->u.op.oper;
@@ -55,12 +90,6 @@ struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
 		}
 		return expTy(NULL, Ty_Int());
 	}
-	assert(0);
-	return expTy(NULL, NULL);
-}
-
-struct expty transCallExp(S_table venv, S_table tenv, A_exp a)
-{
 	assert(0);
 	return expTy(NULL, NULL);
 }
@@ -95,6 +124,7 @@ struct expty transSimpleVar(S_table venv, S_table tenv, A_var v)
 	}
 }
 
+
 struct expty transVar(S_table venv, S_table tenv, A_var v)
 {
 	switch (v->kind) {
@@ -103,20 +133,6 @@ struct expty transVar(S_table venv, S_table tenv, A_var v)
 		case A_subscriptVar: assert(0);
 		default: assert(0);
 	}
-}
-
-void transDecs(S_table venv, S_table tenv, A_decList decs)
-{
-	if (decs) {
-		transDec(venv, tenv, decs->head);
-		transDecs(venv, tenv, decs->tail);
-	}
-}
-
-struct expty transLetExp(S_table venv, S_table tenv, A_exp a)
-{
-	transDecs(venv, tenv, a->u.let.decs);
-	return transExp(venv, tenv, a->u.let.body);
 }
 
 struct expty transExp(S_table venv, S_table tenv, A_exp a)
@@ -146,5 +162,4 @@ void SEM_transProg(A_exp prog)
 {
 	// Typecheck the AST
 	transExp(E_base_venv(), E_base_tenv(), prog);
-	printf("Program typechecks!\n");
 }
