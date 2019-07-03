@@ -17,15 +17,12 @@ struct expty expTy(Tr_exp exp, Ty_ty ty)
 
 Ty_ty transTy(S_table tenv, A_ty a)
 {
-	/*
 	switch (a->kind) {
-		case A_nameTy: return Ty_Name(a->u.name, ); break;
-		case A_recordTy: return Ty_Record(); break;
-		case A_arrayTy: transArrayTy(a); break;
+		case A_nameTy: assert(0); break;
+		case A_recordTy: assert(0); break;
+		case A_arrayTy: return Ty_Array(S_look(tenv, a->u.array));
 	}
-	*/
-	assert(0); // FIXME implement this func
-	return NULL;
+	assert(0);
 }
 
 /* FIXME(ted): why is the RHS of a type declaration wrapped
@@ -36,13 +33,26 @@ void transTyDec(S_table venv, S_table tenv, A_dec d)
 {
 	assert(d->kind == A_typeDec);
 	Ty_ty t = transTy(tenv, d->u.type->head->ty);
-	S_enter(tenv, d->u.type->head->name, E_VarEntry(t));
+	S_enter(tenv, d->u.type->head->name, t);
+}
+
+bool typesEqual(S_table tenv, Ty_ty t1, Ty_ty t2)
+{
+	assert(0);
+	return FALSE;
 }
 
 void transVarDec(S_table venv, S_table tenv, A_dec d)
 {
 	assert(d->kind == A_varDec);
 	struct expty e = transExp(venv, tenv, d->u.var.init);
+	if (d->u.var.typ) {
+		Ty_ty varLabel = actual_ty(S_look(tenv, d->u.var.typ), tenv); 
+		Ty_ty expType = actual_ty(e.ty, tenv);
+		if (typesEqual(tenv, varLabel, expType)) {
+			EM_error(d->pos, "Type label mismatch");
+		}
+	}
 	S_enter(venv, d->u.var.var, E_VarEntry(e.ty));
 }
 
