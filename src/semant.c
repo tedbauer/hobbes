@@ -124,7 +124,6 @@ struct expty transSimpleVar(S_table venv, S_table tenv, A_var v)
 	}
 }
 
-
 struct expty transVar(S_table venv, S_table tenv, A_var v)
 {
 	switch (v->kind) {
