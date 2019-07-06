@@ -20,7 +20,7 @@ Ty_ty transTy(S_table tenv, A_ty a)
 	switch (a->kind) {
 		case A_nameTy: assert(0); break;
 		case A_recordTy: assert(0); break;
-		case A_arrayTy: return Ty_Array(S_look(tenv, a->u.array));
+		case A_arrayTy: return Ty_Array(actual_ty(S_look(tenv, a->u.array), tenv));
 	}
 	assert(0);
 }
@@ -36,8 +36,25 @@ void transTyDec(S_table venv, S_table tenv, A_dec d)
 	S_enter(tenv, d->u.type->head->name, t);
 }
 
+void printTenvBinding(S_symbol sym, Ty_ty t)
+{
+	printf("[%s: ", S_name(sym));
+	Ty_print(t);
+	printf("]\n");
+}
+
 bool typesEqual(S_table tenv, Ty_ty t1, Ty_ty t2)
 {
+	if (t1->kind == Ty_array && t2->kind == Ty_array) {
+		S_dump(tenv, printTenvBinding);
+		Ty_ty t1_base = actual_ty(t1->u.array, tenv);
+		Ty_ty t2_base = actual_ty(t2->u.array, tenv);
+		return typesEqual(tenv, t1_base, t2_base);
+	} else if (t1->kind == t2->kind) { /* Primitives should fall under here */
+		return TRUE;
+	} else {
+		return FALSE;
+	}
 	assert(0);
 	return FALSE;
 }
@@ -49,7 +66,7 @@ void transVarDec(S_table venv, S_table tenv, A_dec d)
 	if (d->u.var.typ) {
 		Ty_ty varLabel = actual_ty(S_look(tenv, d->u.var.typ), tenv); 
 		Ty_ty expType = actual_ty(e.ty, tenv);
-		if (typesEqual(tenv, varLabel, expType)) {
+		if (!typesEqual(tenv, varLabel, expType)) {
 			EM_error(d->pos, "Type label mismatch");
 		}
 	}
@@ -144,6 +161,18 @@ struct expty transVar(S_table venv, S_table tenv, A_var v)
 	}
 }
 
+struct expty transArrayExp(S_table venv, S_table tenv, A_exp a)
+{
+	Ty_ty initExpTy = transExp(venv, tenv, a->u.array.init).ty;
+	Ty_ty arrayTy = actual_ty(S_look(tenv, a->u.array.typ), tenv);
+	Ty_ty arrayBaseTy = arrayTy->u.array;
+	if (typesEqual(tenv, initExpTy, arrayBaseTy)) {
+		return expTy(NULL, Ty_Array(initExpTy));
+	} else {
+		EM_error(a->pos, "Array type incompatible with init type");
+	}
+}
+
 struct expty transExp(S_table venv, S_table tenv, A_exp a)
 {
 	switch (a->kind) {
@@ -161,7 +190,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 		case A_forExp: assert(0);
 		case A_breakExp: assert(0);
 		case A_letExp: return transLetExp(venv, tenv, a);
-		case A_arrayExp: return expTy(NULL, Ty_Array(S_look(tenv, a->u.array.typ)));
+		case A_arrayExp: return transArrayExp(venv, tenv, a); //return expTy(NULL, Ty_Array(S_look(tenv, a->u.array.typ)));
 		default: assert(0);
 	}
 	assert(0);

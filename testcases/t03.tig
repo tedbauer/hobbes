@@ -1,0 +1,6 @@
+let
+	type arrtype1 = array of int
+	var x := arrtype1 [10] of "hello"
+in
+	x
+end

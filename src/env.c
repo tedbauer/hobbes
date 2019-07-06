@@ -111,13 +111,12 @@ E_enventry E_ExitEntry()
 	return e;
 }
 
-
 S_table E_base_tenv()
 {
 	S_table t = S_empty();
-	S_enter(t, S_Symbol("int"), Ty_Int);
-	S_enter(t, S_Symbol("string"), Ty_Int);
-	return S_empty();
+	S_enter(t, S_Symbol("int"), Ty_Int());
+	S_enter(t, S_Symbol("string"), Ty_String());
+	return t;
 }
 
 S_table E_base_venv()
