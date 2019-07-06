@@ -28,7 +28,9 @@ Ty_ty transTy(S_table tenv, A_ty a)
 /* FIXME(ted): why is the RHS of a type declaration wrapped
  * in an A_nametyList? Here, I'm making the assumption that
  * these are _always_ singleton lists -- a fact that is weird
- * and could be wrong. */
+ * and could be wrong.
+ * One hypothesis: maybe one can parse type declarations
+ * in such a way that could make use of A_nametyList? */
 void transTyDec(S_table venv, S_table tenv, A_dec d)
 {
 	assert(d->kind == A_typeDec);
@@ -190,7 +192,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 		case A_forExp: assert(0);
 		case A_breakExp: assert(0);
 		case A_letExp: return transLetExp(venv, tenv, a);
-		case A_arrayExp: return transArrayExp(venv, tenv, a); //return expTy(NULL, Ty_Array(S_look(tenv, a->u.array.typ)));
+		case A_arrayExp: return transArrayExp(venv, tenv, a);
 		default: assert(0);
 	}
 	assert(0);

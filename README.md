@@ -6,8 +6,8 @@ with [this issue][tracker].
 ## Usage
 
 Tigger requires [Bison and Flex][bflex]. I recommend installing them with
-[Homebrew][brew]. Once you've done that, you can try generating an AST from
-a simple program:
+[Homebrew][brew]. Once you've done that, you can try generating and
+typechecking the AST of a simple program:
 
 	$ cd src
 	$ make
