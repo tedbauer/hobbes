@@ -13,3 +13,6 @@ E_enventry E_FunEntry(Ty_tyList formals, Ty_ty result);
 
 S_table E_base_tenv(void);
 S_table E_base_venv(void);
+
+void dumpTenv(S_table tenv);
+void dumpVenv(S_table venv);

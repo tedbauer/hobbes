@@ -111,6 +111,38 @@ E_enventry E_ExitEntry()
 	return e;
 }
 
+void printTenvBinding(S_symbol sym, Ty_ty t)
+{
+	printf("[%s: ", S_name(sym));
+	Ty_print(t);
+	printf("]\n");
+}
+
+void printVenvBinding(S_symbol sym, E_enventry e)
+{
+	if (e->kind == E_varEntry) {
+		printf("[%s: ", S_name(sym));
+		Ty_print(e->u.var.ty);
+	} else {
+		printf("Non-var entry\n");
+		printf("]\n");
+	}
+}
+
+void dumpTenv(S_table tenv)
+{
+	printf("Type env:\n");
+	S_dump(tenv, printTenvBinding);
+	printf("-----\n");
+}
+
+void dumpVenv(S_table venv)
+{
+	printf("Var env:\n");
+	S_dump(venv, printTenvBinding);
+	printf("-----\n");
+}
+
 S_table E_base_tenv()
 {
 	S_table t = S_empty();

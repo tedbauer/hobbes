@@ -23,17 +23,27 @@ Ty_ty transRecordTy(S_table tenv, A_ty a)
 	A_fieldList currFieldList = a->u.record;
 	while (currFieldList) {
 		S_symbol currFieldName = currFieldList->head->name;
+		printf("transRecordTy: found field named %s\n", S_name(currFieldName));
 		Ty_ty currFieldType = actual_ty(S_look(tenv, currFieldList->head->typ), tenv);
 		Ty_field newHead = Ty_Field(currFieldName, currFieldType);
 		Ty_fieldList newFieldList = Ty_FieldList(newHead, NULL);
 		if (previousTail) {
+			printf("Entered not NULL case.\n");
 			*previousTail = newFieldList;
 			previousTail = &((*previousTail)->tail);
 		} else {
+			printf("Entered NULL case.\n");
 			previousTail = &newFieldList;
 			resultFieldList = newFieldList;
 		}
 		currFieldList = currFieldList->tail;
+	}
+	printf("Testing resultFieldList...\n");
+	while (resultFieldList) {
+		printf("Constructed field list contains field %s:", S_name(resultFieldList->head->name));
+		Ty_print(resultFieldList->head->ty);
+		printf("\n");
+		resultFieldList = resultFieldList->tail;
 	}
 	return Ty_Record(resultFieldList);
 }
@@ -64,17 +74,10 @@ void transTyDec(S_table venv, S_table tenv, A_dec d)
 	S_enter(tenv, d->u.type->head->name, t);
 }
 
-void printTenvBinding(S_symbol sym, Ty_ty t)
-{
-	printf("[%s: ", S_name(sym));
-	Ty_print(t);
-	printf("]\n");
-}
-
 bool typesEqual(S_table tenv, Ty_ty t1, Ty_ty t2)
 {
 	if (t1->kind == Ty_array && t2->kind == Ty_array) {
-		S_dump(tenv, printTenvBinding);
+		dumpTenv(tenv);
 		Ty_ty t1_base = actual_ty(t1->u.array, tenv);
 		Ty_ty t2_base = actual_ty(t2->u.array, tenv);
 		return typesEqual(tenv, t1_base, t2_base);
@@ -108,11 +111,11 @@ void transDec(S_table venv, S_table tenv, A_dec d)
 			assert(0);
 		case A_varDec: 
 			transVarDec(venv, tenv, d);
-			S_dump(tenv, printTenvBinding);
+			dumpTenv(tenv);
 			break;
 		case A_typeDec:
 			transTyDec(venv, tenv, d);
-			S_dump(tenv, printTenvBinding);
+			dumpTenv(tenv);
 			break;
 		default: assert(0);
 	}
@@ -143,7 +146,9 @@ Ty_ty findFieldTy(Ty_ty recordTy, S_symbol fieldName, A_pos pos)
 	assert(recordTy->kind == Ty_record);
 	Ty_fieldList fields = recordTy->u.record;
 	while (fields) {
+		printf("%s\n", S_name(fields->head->name));
 		if (fields->head->name == fieldName) {
+			printf("Found!!!\n");
 			return fields->head->ty;
 		}
 		fields = fields->tail;
@@ -162,9 +167,7 @@ struct expty transAssignExp(S_table venv, S_table tenv, A_exp a)
 			{
 				//FIXME: recordTy is null. Dump venv and fix
 				Ty_ty recordTy = transVar(venv, tenv, a->u.var->u.field.var).ty;
-				printf("This is: ");
-				Ty_print(recordTy);
-				printf("\n");
+				dumpVenv(venv);
 				return expTy(NULL, findFieldTy(recordTy, a->u.var->u.field.sym, a->pos));
 			}
 	}
@@ -179,6 +182,7 @@ struct expty transRecordExp(S_table venv, S_table tenv, A_exp a)
 	Ty_fieldList resultFieldTypes;
 	while (currEField) {
 		S_symbol fieldName = currEField->head->name;
+		printf("transRecordExp: found field named %s\n", S_name(fieldName));
 		Ty_ty fieldType = transExp(venv, tenv, currEField->head->exp).ty;
 		Ty_field newHead = Ty_Field(fieldName, fieldType);
 		Ty_fieldList newFieldList = Ty_FieldList(newHead, NULL);
@@ -191,6 +195,14 @@ struct expty transRecordExp(S_table venv, S_table tenv, A_exp a)
 		}
 		currEField = currEField->tail;
 	}
+	/*
+	printf("Testing transRecordExp...\n");
+	while (resultFieldTypes) {
+		printf("Constructed field list contains field type %s\n.", S_name(resultFieldTypes->head->name));
+		resultFieldList = resultFieldList->tail;
+	}
+	*/
+	return expTy(NULL, Ty_Record(resultFieldTypes));
 }
 
 struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
@@ -312,5 +324,5 @@ void SEM_transProg(A_exp prog)
 	// Typecheck the AST
 	S_table tenv = E_base_tenv();
 	transExp(E_base_venv(), tenv, prog);
-	S_dump(tenv, printTenvBinding);
+	dumpTenv(tenv);
 }
