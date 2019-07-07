@@ -18,7 +18,7 @@ struct expty expTy(Tr_exp exp, Ty_ty ty)
 Ty_ty transTy(S_table tenv, A_ty a)
 {
 	switch (a->kind) {
-		case A_nameTy: assert(0); break;
+		case A_nameTy: return actual_ty(S_look(tenv, a->u.name), tenv);
 		case A_recordTy: assert(0); break;
 		case A_arrayTy: return Ty_Array(actual_ty(S_look(tenv, a->u.array), tenv));
 	}
