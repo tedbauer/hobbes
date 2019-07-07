@@ -15,12 +15,38 @@ struct expty expTy(Tr_exp exp, Ty_ty ty)
 	return e;
 }
 
+Ty_ty transRecordTy(S_table tenv, A_ty a)
+{
+	assert(a->kind == A_recordTy);
+	Ty_fieldList* previousTail = NULL;
+	Ty_fieldList resultFieldList;
+	A_fieldList currFieldList = a->u.record;
+	while (currFieldList) {
+		S_symbol currFieldName = currFieldList->head->name;
+		Ty_ty currFieldType = actual_ty(S_look(tenv, currFieldList->head->typ), tenv);
+		Ty_field newHead = Ty_Field(currFieldName, currFieldType);
+		Ty_fieldList newFieldList = Ty_FieldList(newHead, NULL);
+		if (previousTail) {
+			*previousTail = newFieldList;
+			previousTail = &((*previousTail)->tail);
+		} else {
+			previousTail = &newFieldList;
+			resultFieldList = newFieldList;
+		}
+		currFieldList = currFieldList->tail;
+	}
+	return Ty_Record(resultFieldList);
+}
+
 Ty_ty transTy(S_table tenv, A_ty a)
 {
 	switch (a->kind) {
-		case A_nameTy: return actual_ty(S_look(tenv, a->u.name), tenv);
-		case A_recordTy: assert(0); break;
-		case A_arrayTy: return Ty_Array(actual_ty(S_look(tenv, a->u.array), tenv));
+		case A_nameTy:
+			return actual_ty(S_look(tenv, a->u.name), tenv);
+		case A_recordTy: 
+			return transRecordTy(tenv, a);
+		case A_arrayTy: 
+			return Ty_Array(actual_ty(S_look(tenv, a->u.array), tenv));
 	}
 	assert(0);
 }
@@ -78,9 +104,16 @@ void transVarDec(S_table venv, S_table tenv, A_dec d)
 void transDec(S_table venv, S_table tenv, A_dec d)
 {
 	switch(d->kind) {
-		case A_functionDec: assert(0);
-		case A_varDec: transVarDec(venv, tenv, d); break;
-		case A_typeDec: transTyDec(venv, tenv, d); break;
+		case A_functionDec:
+			assert(0);
+		case A_varDec: 
+			transVarDec(venv, tenv, d);
+			S_dump(tenv, printTenvBinding);
+			break;
+		case A_typeDec:
+			transTyDec(venv, tenv, d);
+			S_dump(tenv, printTenvBinding);
+			break;
 		default: assert(0);
 	}
 }
@@ -103,6 +136,61 @@ struct expty transLetExp(S_table venv, S_table tenv, A_exp a)
 	S_endScope(venv);
 	S_endScope(tenv);
 	return exp;
+}
+
+Ty_ty findFieldTy(Ty_ty recordTy, S_symbol fieldName, A_pos pos)
+{
+	assert(recordTy->kind == Ty_record);
+	Ty_fieldList fields = recordTy->u.record;
+	while (fields) {
+		if (fields->head->name == fieldName) {
+			return fields->head->ty;
+		}
+		fields = fields->tail;
+	}
+	EM_error(pos, "tried to access non-existent field");
+}
+
+struct expty transAssignExp(S_table venv, S_table tenv, A_exp a)
+{
+	switch (a->u.var->kind) {
+		case A_simpleVar:
+			return expTy(NULL, S_look(venv, a->u.var->u.simple));
+		case A_subscriptVar:
+			assert(0);
+		case A_fieldVar:
+			{
+				//FIXME: recordTy is null. Dump venv and fix
+				Ty_ty recordTy = transVar(venv, tenv, a->u.var->u.field.var).ty;
+				printf("This is: ");
+				Ty_print(recordTy);
+				printf("\n");
+				return expTy(NULL, findFieldTy(recordTy, a->u.var->u.field.sym, a->pos));
+			}
+	}
+}
+
+/* TODO(ted): abstract, this shares a lot of logic w/ transRecordTy */
+struct expty transRecordExp(S_table venv, S_table tenv, A_exp a)
+{
+	// FIXME: check against provided record type (not just label)
+	A_efieldList currEField = a->u.record.fields;
+	Ty_fieldList* prevTail = NULL;
+	Ty_fieldList resultFieldTypes;
+	while (currEField) {
+		S_symbol fieldName = currEField->head->name;
+		Ty_ty fieldType = transExp(venv, tenv, currEField->head->exp).ty;
+		Ty_field newHead = Ty_Field(fieldName, fieldType);
+		Ty_fieldList newFieldList = Ty_FieldList(newHead, NULL);
+		if (prevTail) {
+			*prevTail = newFieldList;
+			prevTail = &(newFieldList->tail);
+		} else {
+			prevTail = &newFieldList;
+			resultFieldTypes = newFieldList;
+		}
+		currEField = currEField->tail;
+	}
 }
 
 struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
@@ -156,10 +244,14 @@ struct expty transSimpleVar(S_table venv, S_table tenv, A_var v)
 struct expty transVar(S_table venv, S_table tenv, A_var v)
 {
 	switch (v->kind) {
-		case A_simpleVar: return transSimpleVar(venv, tenv, v);
-		case A_fieldVar: return transFieldVar(venv, tenv, v);
-		case A_subscriptVar: assert(0);
-		default: assert(0);
+		case A_simpleVar: 
+			return transSimpleVar(venv, tenv, v);
+		case A_fieldVar: 
+			return transFieldVar(venv, tenv, v);
+		case A_subscriptVar: 
+			assert(0);
+		default: 
+			assert(0);
 	}
 }
 
@@ -178,22 +270,39 @@ struct expty transArrayExp(S_table venv, S_table tenv, A_exp a)
 struct expty transExp(S_table venv, S_table tenv, A_exp a)
 {
 	switch (a->kind) {
-		case A_varExp: return transVar(venv, tenv, a->u.var);
-		case A_nilExp: return expTy(NULL, Ty_Nil());
-		case A_intExp: return expTy(NULL, Ty_Int());
-		case A_stringExp: return expTy(NULL, Ty_String());
-		case A_callExp: assert(0);
-		case A_opExp: return transOpExp(venv, tenv, a);
-		case A_recordExp: assert(0);
-		case A_seqExp: assert(0);
-		case A_assignExp: assert(0);
-		case A_ifExp: assert(0);
-		case A_whileExp: assert(0);
-		case A_forExp: assert(0);
-		case A_breakExp: assert(0);
-		case A_letExp: return transLetExp(venv, tenv, a);
-		case A_arrayExp: return transArrayExp(venv, tenv, a);
-		default: assert(0);
+		case A_varExp: 
+			return transVar(venv, tenv, a->u.var);
+		case A_nilExp: 
+			return expTy(NULL, Ty_Nil());
+		case A_intExp: 
+			return expTy(NULL, Ty_Int());
+		case A_stringExp: 
+			return expTy(NULL, Ty_String());
+		case A_callExp: 
+			assert(0);
+		case A_opExp: 
+			return transOpExp(venv, tenv, a);
+		case A_recordExp: 
+			return transRecordExp(venv, tenv, a);
+		case A_seqExp: 
+			transExp(venv, tenv, a->u.seq->head);
+			return transExp(venv, tenv, A_SeqExp(a->pos, a->u.seq->tail));
+		case A_assignExp: 
+			return transAssignExp(venv, tenv, a);
+		case A_ifExp: 
+			assert(0);
+		case A_whileExp: 
+			assert(0);
+		case A_forExp: 
+			assert(0);
+		case A_breakExp: 
+			assert(0);
+		case A_letExp: 
+			return transLetExp(venv, tenv, a);
+		case A_arrayExp: 
+			return transArrayExp(venv, tenv, a);
+		default: assert
+			 (0);
 	}
 	assert(0);
 }
@@ -201,5 +310,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 void SEM_transProg(A_exp prog)
 {
 	// Typecheck the AST
-	transExp(E_base_venv(), E_base_tenv(), prog);
+	S_table tenv = E_base_tenv();
+	transExp(E_base_venv(), tenv, prog);
+	S_dump(tenv, printTenvBinding);
 }
