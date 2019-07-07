@@ -15,9 +15,11 @@ typechecking the AST of a simple program:
 
 ## Links
 - [Project Starter Files][sfiles]
+- [Language spec from Tufts][spec]
 
 [sfiles]: https://www.cs.princeton.edu/~appel/modern/c/project.html
 [bflex]: http://dinosaur.compilertools.net/
 [tracker]: https://github.com/tedbauer/tigger/issues/1
 [brew]: https://brew.sh/
 [tiger]: https://www.cs.princeton.edu/~appel/modern/
+[spec]: http://www.cs.tufts.edu/comp/181/Tiger.pdf

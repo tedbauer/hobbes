@@ -67,6 +67,16 @@ void transTyDec(S_table venv, S_table tenv, A_dec d)
 	S_enter(tenv, d->u.type->head->name, t);
 }
 
+bool recordsEqual(S_table tenv, Ty_ty t1, Ty_ty t2)
+{
+	assert(t1->kind == Ty_record);
+	assert(t2->kind == Ty_record);
+	return TRUE; // FIXME
+}
+
+/* FIXME(ted): compares records for structural equivalence,
+ * so records can match their type labels; however, this should
+ * not be allowed -- must augment. */
 bool typesEqual(S_table tenv, Ty_ty t1, Ty_ty t2)
 {
 	if (t1->kind == Ty_array && t2->kind == Ty_array) {
@@ -74,7 +84,10 @@ bool typesEqual(S_table tenv, Ty_ty t1, Ty_ty t2)
 		Ty_ty t1_base = actual_ty(t1->u.array, tenv);
 		Ty_ty t2_base = actual_ty(t2->u.array, tenv);
 		return typesEqual(tenv, t1_base, t2_base);
-	} else if (t1->kind == t2->kind) { /* Primitives should fall under here */
+	} else if (t1->kind == Ty_record && t2->kind == Ty_record) {
+		return recordsEqual(tenv, actual_ty(t1, tenv), actual_ty(t2, tenv));
+	}
+	else if (t1->kind == t2->kind) { /* Primitives should fall under here */
 		return TRUE;
 	} else {
 		return FALSE;
@@ -94,6 +107,7 @@ void transVarDec(S_table venv, S_table tenv, A_dec d)
 			EM_error(d->pos, "Type label mismatch");
 		}
 	}
+	printf("Successful var dec.\n");
 	S_enter(venv, d->u.var.var, E_VarEntry(e.ty));
 }
 
