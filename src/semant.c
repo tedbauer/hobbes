@@ -15,29 +15,22 @@ struct expty expTy(Tr_exp exp, Ty_ty ty)
 	return e;
 }
 
+Ty_fieldList constructFieldList(S_table tenv, A_fieldList fieldList)
+{
+	if (fieldList) {
+		S_symbol fieldName = fieldList->head->name;
+		Ty_ty fieldType = actual_ty(S_look(tenv, fieldList->head->typ), tenv);
+		Ty_field newHead = Ty_Field(fieldName, fieldType);
+		return Ty_FieldList(newHead, constructFieldList(tenv, fieldList->tail));
+	} else {
+		return NULL;
+	}
+}
+
 Ty_ty transRecordTy(S_table tenv, A_ty a)
 {
 	assert(a->kind == A_recordTy);
-	Ty_fieldList* previousTail = NULL;
-	Ty_fieldList resultFieldList;
-	A_fieldList currFieldList = a->u.record;
-	while (currFieldList) {
-		S_symbol currFieldName = currFieldList->head->name;
-		printf("transRecordTy: found field named %s\n", S_name(currFieldName));
-		Ty_ty currFieldType = actual_ty(S_look(tenv, currFieldList->head->typ), tenv);
-		Ty_field newHead = Ty_Field(currFieldName, currFieldType);
-		Ty_fieldList newFieldList = Ty_FieldList(newHead, NULL);
-		if (previousTail) {
-			printf("Entered not NULL case.\n");
-			*previousTail = newFieldList;
-			previousTail = &((*previousTail)->tail);
-		} else {
-			printf("Entered NULL case.\n");
-			previousTail = &newFieldList;
-			resultFieldList = newFieldList;
-		}
-		currFieldList = currFieldList->tail;
-	}
+	Ty_fieldList resultFieldList = constructFieldList(tenv, a->u.record);
 	printf("Testing resultFieldList...\n");
 	while (resultFieldList) {
 		printf("Constructed field list contains field %s:", S_name(resultFieldList->head->name));
@@ -158,50 +151,48 @@ Ty_ty findFieldTy(Ty_ty recordTy, S_symbol fieldName, A_pos pos)
 
 struct expty transAssignExp(S_table venv, S_table tenv, A_exp a)
 {
-	switch (a->u.var->kind) {
+	assert(a->kind == A_assignExp);
+	Ty_ty expType = transExp(venv, tenv, a->u.assign.exp).ty;
+	Ty_ty varType;
+	switch (a->u.assign.var->kind) {
 		case A_simpleVar:
-			return expTy(NULL, S_look(venv, a->u.var->u.simple));
+			varType = actual_ty(S_look(venv, a->u.var->u.simple), tenv);
+			break;
 		case A_subscriptVar:
 			assert(0);
 		case A_fieldVar:
 			{
-				//FIXME: recordTy is null. Dump venv and fix
-				Ty_ty recordTy = transVar(venv, tenv, a->u.var->u.field.var).ty;
-				dumpVenv(venv);
-				return expTy(NULL, findFieldTy(recordTy, a->u.var->u.field.sym, a->pos));
+				Ty_ty recordTy = transVar(venv, tenv, a->u.assign.var->u.field.var).ty;
+				varType = findFieldTy(recordTy, a->u.assign.var->u.field.sym, a->pos);
+				break;
 			}
 	}
+	if (typesEqual(tenv, varType, expType)) {
+		printf("Typechecked the assign.\n");
+		return expTy(NULL, Ty_Void());
+	} else {
+		EM_error(a->pos, "LHS did not match type of RHS in assign exp");
+	}
 }
+
+Ty_fieldList constructFieldListE(S_table venv, S_table tenv, A_efieldList efieldList)
+{
+	if (efieldList) {
+		S_symbol efieldName = efieldList->head->name;
+		Ty_ty efieldType = (transExp(venv, tenv, efieldList->head->exp)).ty;
+		Ty_field newHead = Ty_Field(efieldName, efieldType);
+		return Ty_FieldList(newHead, constructFieldListE(venv, tenv, efieldList->tail));
+	} else {
+		return NULL;
+	}
+}
+
 
 /* TODO(ted): abstract, this shares a lot of logic w/ transRecordTy */
 struct expty transRecordExp(S_table venv, S_table tenv, A_exp a)
 {
 	// FIXME: check against provided record type (not just label)
-	A_efieldList currEField = a->u.record.fields;
-	Ty_fieldList* prevTail = NULL;
-	Ty_fieldList resultFieldTypes;
-	while (currEField) {
-		S_symbol fieldName = currEField->head->name;
-		printf("transRecordExp: found field named %s\n", S_name(fieldName));
-		Ty_ty fieldType = transExp(venv, tenv, currEField->head->exp).ty;
-		Ty_field newHead = Ty_Field(fieldName, fieldType);
-		Ty_fieldList newFieldList = Ty_FieldList(newHead, NULL);
-		if (prevTail) {
-			*prevTail = newFieldList;
-			prevTail = &(newFieldList->tail);
-		} else {
-			prevTail = &newFieldList;
-			resultFieldTypes = newFieldList;
-		}
-		currEField = currEField->tail;
-	}
-	/*
-	printf("Testing transRecordExp...\n");
-	while (resultFieldTypes) {
-		printf("Constructed field list contains field type %s\n.", S_name(resultFieldTypes->head->name));
-		resultFieldList = resultFieldList->tail;
-	}
-	*/
+	Ty_fieldList resultFieldTypes = constructFieldListE(venv, tenv, a->u.record.fields);
 	return expTy(NULL, Ty_Record(resultFieldTypes));
 }
 
@@ -297,8 +288,13 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 		case A_recordExp: 
 			return transRecordExp(venv, tenv, a);
 		case A_seqExp: 
+			printf("Typechecked head of seq.\n");
 			transExp(venv, tenv, a->u.seq->head);
-			return transExp(venv, tenv, A_SeqExp(a->pos, a->u.seq->tail));
+			if (a->u.seq->tail) {
+				return transExp(venv, tenv, A_SeqExp(a->pos, a->u.seq->tail));
+			} else {
+				return expTy(NULL, Ty_Void());
+			}
 		case A_assignExp: 
 			return transAssignExp(venv, tenv, a);
 		case A_ifExp: 
