@@ -333,7 +333,18 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 		case A_assignExp: 
 			return transAssignExp(venv, tenv, a);
 		case A_ifExp: 
-			assert(0);
+			{
+				Ty_ty testType = transExp(venv, tenv, a->u.iff.test).ty;
+				Ty_ty leftType = transExp(venv, tenv, a->u.iff.then).ty;
+				Ty_ty rightType = transExp(venv, tenv, a->u.iff.elsee).ty;
+				if (testType->kind != Ty_int) {
+					EM_error(a->pos, "If condition must be int");
+				}
+				if (!typesEqual(tenv, leftType, rightType)) {
+					EM_error(a->pos, "If branches' types must match");
+				}
+				return expTy(NULL, leftType);
+			}
 		case A_whileExp: 
 			{
 				Ty_ty testType = transExp(venv, tenv, a->u.whilee.test).ty;
