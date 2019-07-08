@@ -7,6 +7,8 @@
 #include "../include/semant.h"
 #include "../include/env.h"
 
+bool typesEqual(S_table tenv, Ty_ty t1, Ty_ty t2);
+
 struct expty expTy(Tr_exp exp, Ty_ty ty)
 {
 	struct expty e;
@@ -67,10 +69,40 @@ void transTyDec(S_table venv, S_table tenv, A_dec d)
 	S_enter(tenv, d->u.type->head->name, t);
 }
 
+Ty_ty findFieldTy(Ty_ty recordTy, S_symbol fieldName)
+{
+	assert(recordTy->kind == Ty_record);
+	Ty_fieldList fields = recordTy->u.record;
+	while (fields) {
+		printf("%s\n", S_name(fields->head->name));
+		if (fields->head->name == fieldName) {
+			printf("Found!!!\n");
+			return fields->head->ty;
+		}
+		fields = fields->tail;
+	}
+	return NULL;
+}
+
 bool recordsEqual(S_table tenv, Ty_ty t1, Ty_ty t2)
 {
 	assert(t1->kind == Ty_record);
 	assert(t2->kind == Ty_record);
+
+	Ty_fieldList t1CurrFieldList = t1->u.record;
+	printf("About to check these records outtt\n");
+	while (t1CurrFieldList) {
+		Ty_ty t1CurrFieldType = findFieldTy(t1, t1CurrFieldList->head->name);
+		Ty_ty t2CurrFieldType = findFieldTy(t2, t1CurrFieldList->head->name);
+		printf("Checked a fieldddd\n");
+		if (!t1CurrFieldType || !t2CurrFieldType) {
+			return FALSE;
+		}
+		if (!typesEqual(tenv, t1CurrFieldType, t2CurrFieldType)) {
+			return FALSE;
+		}
+		t1CurrFieldList = t1CurrFieldList->tail;
+	}
 	return TRUE; // FIXME
 }
 
@@ -85,6 +117,7 @@ bool typesEqual(S_table tenv, Ty_ty t1, Ty_ty t2)
 		Ty_ty t2_base = actual_ty(t2->u.array, tenv);
 		return typesEqual(tenv, t1_base, t2_base);
 	} else if (t1->kind == Ty_record && t2->kind == Ty_record) {
+		printf("Comparing 2 records rn.\n");
 		return recordsEqual(tenv, actual_ty(t1, tenv), actual_ty(t2, tenv));
 	}
 	else if (t1->kind == t2->kind) { /* Primitives should fall under here */
@@ -148,21 +181,6 @@ struct expty transLetExp(S_table venv, S_table tenv, A_exp a)
 	return exp;
 }
 
-Ty_ty findFieldTy(Ty_ty recordTy, S_symbol fieldName, A_pos pos)
-{
-	assert(recordTy->kind == Ty_record);
-	Ty_fieldList fields = recordTy->u.record;
-	while (fields) {
-		printf("%s\n", S_name(fields->head->name));
-		if (fields->head->name == fieldName) {
-			printf("Found!!!\n");
-			return fields->head->ty;
-		}
-		fields = fields->tail;
-	}
-	EM_error(pos, "tried to access non-existent field");
-}
-
 struct expty transAssignExp(S_table venv, S_table tenv, A_exp a)
 {
 	assert(a->kind == A_assignExp);
@@ -177,7 +195,10 @@ struct expty transAssignExp(S_table venv, S_table tenv, A_exp a)
 		case A_fieldVar:
 			{
 				Ty_ty recordTy = transVar(venv, tenv, a->u.assign.var->u.field.var).ty;
-				varType = findFieldTy(recordTy, a->u.assign.var->u.field.sym, a->pos);
+				varType = findFieldTy(recordTy, a->u.assign.var->u.field.sym);
+				if (!varType) {
+					EM_error(a->pos, "tried to access non-existent field");
+				}
 				break;
 			}
 	}
@@ -215,7 +236,7 @@ struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
 	A_oper oper = a->u.op.oper;
 	struct expty left = transExp(venv, tenv, a->u.op.left);
 	struct expty right = transExp(venv, tenv, a->u.op.right);
-	if (oper == A_plusOp) {
+	if (oper == A_plusOp || oper == A_gtOp) {
 		if (left.ty->kind != Ty_int) {
 			EM_error(a->u.op.left->pos, "integer required");
 		}
@@ -314,11 +335,21 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 		case A_ifExp: 
 			assert(0);
 		case A_whileExp: 
-			assert(0);
+			{
+				Ty_ty testType = transExp(venv, tenv, a->u.whilee.test).ty;
+				Ty_ty bodyType = transExp(venv, tenv, a->u.whilee.body).ty;
+				if (testType->kind != Ty_int) {
+					EM_error(a->pos, "While condition must be int");
+				}
+				if (bodyType->kind != Ty_void) {
+					EM_error(a->pos, "While body must be void");
+				}
+				return expTy(NULL, Ty_Void());
+			}
 		case A_forExp: 
 			assert(0);
 		case A_breakExp: 
-			assert(0);
+			return expTy(NULL, Ty_Void());
 		case A_letExp: 
 			return transLetExp(venv, tenv, a);
 		case A_arrayExp: 
