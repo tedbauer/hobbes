@@ -200,9 +200,9 @@ struct expty transAssignExp(S_table venv, S_table tenv, A_exp a)
 		assert(0);
 	case A_fieldVar:
 		{
-			Ty_ty recordTy = transVar(venv, tenv,
-						  a->u.assign.var->u.field.var).
-			    ty;
+			Ty_ty recordTy =
+			    transVar(venv, tenv,
+				     a->u.assign.var->u.field.var).ty;
 			varType =
 			    findFieldTy(recordTy, a->u.assign.var->u.field.sym);
 			if (!varType) {
