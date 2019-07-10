@@ -187,39 +187,6 @@ struct expty transLetExp(S_table venv, S_table tenv, A_exp a)
 	return exp;
 }
 
-struct expty transAssignExp(S_table venv, S_table tenv, A_exp a)
-{
-	assert(a->kind == A_assignExp);
-	Ty_ty expType = transExp(venv, tenv, a->u.assign.exp).ty;
-	Ty_ty varType;
-	switch (a->u.assign.var->kind) {
-	case A_simpleVar:
-		varType = actual_ty(S_look(venv, a->u.var->u.simple), tenv);
-		break;
-	case A_subscriptVar:
-		assert(0);
-	case A_fieldVar:
-		{
-			Ty_ty recordTy = transVar(venv, tenv,
-						  a->u.assign.var->u.field.var).
-			    ty;
-			varType =
-			    findFieldTy(recordTy, a->u.assign.var->u.field.sym);
-			if (!varType) {
-				EM_error(a->pos,
-					 "tried to access non-existent field");
-			}
-			break;
-		}
-	}
-	if (typesEqual(tenv, varType, expType)) {
-		printf("Typechecked the assign.\n");
-		return expTy(NULL, Ty_Void());
-	} else {
-		EM_error(a->pos, "LHS did not match type of RHS in assign exp");
-	}
-}
-
 Ty_fieldList
 constructFieldListE(S_table venv, S_table tenv, A_efieldList efieldList)
 {
@@ -234,33 +201,6 @@ constructFieldListE(S_table venv, S_table tenv, A_efieldList efieldList)
 	} else {
 		return NULL;
 	}
-}
-
-/* TODO(ted): abstract, this shares a lot of logic w/ transRecordTy */
-struct expty transRecordExp(S_table venv, S_table tenv, A_exp a)
-{
-	// FIXME: check against provided record type (not just label)
-	Ty_fieldList resultFieldTypes =
-	    constructFieldListE(venv, tenv, a->u.record.fields);
-	return expTy(NULL, Ty_Record(resultFieldTypes));
-}
-
-struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
-{
-	A_oper oper = a->u.op.oper;
-	struct expty left = transExp(venv, tenv, a->u.op.left);
-	struct expty right = transExp(venv, tenv, a->u.op.right);
-	if (oper == A_plusOp || oper == A_gtOp || oper == A_minusOp) {
-		if (left.ty->kind != Ty_int) {
-			EM_error(a->u.op.left->pos, "integer required");
-		}
-		if (right.ty->kind != Ty_int) {
-			EM_error(a->u.op.right->pos, "integer required");
-		}
-		return expTy(NULL, Ty_Int());
-	}
-	assert(0);
-	return expTy(NULL, NULL);
 }
 
 struct expty transFieldVar(S_table venv, S_table tenv, A_var v)
@@ -291,20 +231,6 @@ struct expty transSimpleVar(S_table venv, S_table tenv, A_var v)
 	} else {
 		EM_error(v->pos, "undefined variable %s", S_name(v->u.simple));
 		return expTy(NULL, Ty_Int());
-	}
-}
-
-struct expty transVar(S_table venv, S_table tenv, A_var v)
-{
-	switch (v->kind) {
-	case A_simpleVar:
-		return transSimpleVar(venv, tenv, v);
-	case A_fieldVar:
-		return transFieldVar(venv, tenv, v);
-	case A_subscriptVar:
-		assert(0);
-	default:
-		assert(0);
 	}
 }
 
@@ -348,6 +274,145 @@ bool containsAssignTo(A_exp a, S_symbol s)
 	assert(0);
 }
 
+struct expty transForExp(S_table venv, S_table tenv, A_exp a)
+{
+	Ty_ty loType = transExp(venv, tenv, a->u.forr.lo).ty;
+	Ty_ty hiType = transExp(venv, tenv, a->u.forr.hi).ty;
+	S_enter(venv, a->u.forr.var, E_VarEntry(Ty_Int()));
+	Ty_ty bodyType = transExp(venv, tenv, a->u.forr.body).ty;
+	if (loType->kind != Ty_int) {
+		EM_error(a->pos,
+			 "Start index in for loop must be int");
+	}
+	if (hiType->kind != Ty_int) {
+		EM_error(a->pos,
+			 "End index in for loop must be int");
+	}
+	if (bodyType->kind != Ty_void) {
+		EM_error(a->pos,
+			 "For loop body must be type void");
+	}
+	if (containsAssignTo(a->u.forr.body, a->u.forr.var)) {
+		EM_error(a->pos,
+			 "Cannot assign to index in for loop");
+	}
+	return expTy(NULL, Ty_Void());
+}
+
+struct expty transWhileExp(S_table venv, S_table tenv, A_exp a)
+{
+	Ty_ty testType = transExp(venv, tenv, a->u.whilee.test).ty;
+	Ty_ty bodyType = transExp(venv, tenv, a->u.whilee.body).ty;
+	if (testType->kind != Ty_int) {
+		EM_error(a->pos, "While condition must be int");
+	}
+	if (bodyType->kind != Ty_void) {
+		EM_error(a->pos, "While body must be void");
+	}
+	return expTy(NULL, Ty_Void());
+}
+
+struct expty transIfExp(S_table venv, S_table tenv, A_exp a)
+{
+	Ty_ty testType = transExp(venv, tenv, a->u.iff.test).ty;
+	Ty_ty leftType = transExp(venv, tenv, a->u.iff.then).ty;
+	Ty_ty rightType =
+	    transExp(venv, tenv, a->u.iff.elsee).ty;
+	if (testType->kind != Ty_int) {
+		EM_error(a->pos, "If condition must be int");
+	}
+	if (!typesEqual(tenv, leftType, rightType)) {
+		EM_error(a->pos,
+			 "If branches' types must match");
+	}
+	return expTy(NULL, leftType);
+}
+
+struct expty transAssignExp(S_table venv, S_table tenv, A_exp a)
+{
+	assert(a->kind == A_assignExp);
+	Ty_ty expType = transExp(venv, tenv, a->u.assign.exp).ty;
+	Ty_ty varType;
+	switch (a->u.assign.var->kind) {
+	case A_simpleVar:
+		varType = actual_ty(S_look(venv, a->u.var->u.simple), tenv);
+		break;
+	case A_subscriptVar:
+		assert(0);
+	case A_fieldVar:
+		{
+			Ty_ty recordTy = transVar(venv, tenv,
+						  a->u.assign.var->u.field.var).
+			    ty;
+			varType =
+			    findFieldTy(recordTy, a->u.assign.var->u.field.sym);
+			if (!varType) {
+				EM_error(a->pos,
+					 "tried to access non-existent field");
+			}
+			break;
+		}
+	}
+	if (typesEqual(tenv, varType, expType)) {
+		printf("Typechecked the assign.\n");
+		return expTy(NULL, Ty_Void());
+	} else {
+		EM_error(a->pos, "LHS did not match type of RHS in assign exp");
+	}
+}
+
+struct expty transSeqExp(S_table venv, S_table tenv, A_exp a)
+{
+	transExp(venv, tenv, a->u.seq->head);
+	if (a->u.seq->tail) {
+		return transExp(venv, tenv,
+				A_SeqExp(a->pos, a->u.seq->tail));
+	} else {
+		return expTy(NULL, Ty_Void());
+	}
+}
+
+/* TODO(ted): abstract, this shares a lot of logic w/ transRecordTy */
+struct expty transRecordExp(S_table venv, S_table tenv, A_exp a)
+{
+	// FIXME: check against provided record type (not just label)
+	Ty_fieldList resultFieldTypes =
+	    constructFieldListE(venv, tenv, a->u.record.fields);
+	return expTy(NULL, Ty_Record(resultFieldTypes));
+}
+
+struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
+{
+	A_oper oper = a->u.op.oper;
+	struct expty left = transExp(venv, tenv, a->u.op.left);
+	struct expty right = transExp(venv, tenv, a->u.op.right);
+	if (oper == A_plusOp || oper == A_gtOp || oper == A_minusOp) {
+		if (left.ty->kind != Ty_int) {
+			EM_error(a->u.op.left->pos, "integer required");
+		}
+		if (right.ty->kind != Ty_int) {
+			EM_error(a->u.op.right->pos, "integer required");
+		}
+		return expTy(NULL, Ty_Int());
+	}
+	assert(0);
+	return expTy(NULL, NULL);
+}
+
+struct expty transVar(S_table venv, S_table tenv, A_var v)
+{
+	switch (v->kind) {
+	case A_simpleVar:
+		return transSimpleVar(venv, tenv, v);
+	case A_fieldVar:
+		return transFieldVar(venv, tenv, v);
+	case A_subscriptVar:
+		assert(0);
+	default:
+		assert(0);
+	}
+}
+
 struct expty transExp(S_table venv, S_table tenv, A_exp a)
 {
 	switch (a->kind) {
@@ -366,70 +431,15 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 	case A_recordExp:
 		return transRecordExp(venv, tenv, a);
 	case A_seqExp:
-		printf("Typechecked head of seq.\n");
-		transExp(venv, tenv, a->u.seq->head);
-		if (a->u.seq->tail) {
-			return transExp(venv, tenv,
-					A_SeqExp(a->pos, a->u.seq->tail));
-		} else {
-			return expTy(NULL, Ty_Void());
-		}
+		return transSeqExp(venv, tenv, a);
 	case A_assignExp:
 		return transAssignExp(venv, tenv, a);
 	case A_ifExp:
-		{
-			Ty_ty testType = transExp(venv, tenv, a->u.iff.test).ty;
-			Ty_ty leftType = transExp(venv, tenv, a->u.iff.then).ty;
-			Ty_ty rightType =
-			    transExp(venv, tenv, a->u.iff.elsee).ty;
-			if (testType->kind != Ty_int) {
-				EM_error(a->pos, "If condition must be int");
-			}
-			if (!typesEqual(tenv, leftType, rightType)) {
-				EM_error(a->pos,
-					 "If branches' types must match");
-			}
-			return expTy(NULL, leftType);
-		}
+		return transIfExp(venv, tenv, a);
 	case A_whileExp:
-		{
-			Ty_ty testType =
-			    transExp(venv, tenv, a->u.whilee.test).ty;
-			Ty_ty bodyType =
-			    transExp(venv, tenv, a->u.whilee.body).ty;
-			if (testType->kind != Ty_int) {
-				EM_error(a->pos, "While condition must be int");
-			}
-			if (bodyType->kind != Ty_void) {
-				EM_error(a->pos, "While body must be void");
-			}
-			return expTy(NULL, Ty_Void());
-		}
+		return transWhileExp(venv, tenv, a);
 	case A_forExp:
-		{
-			Ty_ty loType = transExp(venv, tenv, a->u.forr.lo).ty;
-			Ty_ty hiType = transExp(venv, tenv, a->u.forr.hi).ty;
-			S_enter(venv, a->u.forr.var, E_VarEntry(Ty_Int()));
-			Ty_ty bodyType =
-			    transExp(venv, tenv, a->u.forr.body).ty;
-			if (loType->kind != Ty_int) {
-				EM_error(a->pos,
-					 "Start index in for loop must be int");
-			}
-			if (hiType->kind != Ty_int) {
-				EM_error(a->pos,
-					 "End index in for loop must be int");
-			}
-			if (bodyType->kind != Ty_void) {
-				EM_error(a->pos,
-					 "For loop body must be type void");
-			}
-			if (containsAssignTo(a->u.forr.body, a->u.forr.var)) {
-				EM_error(a->pos,
-					 "Cannot assign to index in for loop");
-			}
-			return expTy(NULL, Ty_Void());
-		}
+		return transForExp(venv, tenv, a);
 	case A_breakExp:
 		return expTy(NULL, Ty_Void());
 	case A_letExp:
@@ -447,7 +457,6 @@ void SEM_transProg(A_exp prog)
 	// Typecheck the AST
 	S_table tenv = E_base_tenv();
 	S_table venv = E_base_venv();
-	dumpVenv(venv);
 	transExp(venv, tenv, prog);
 	dumpTenv(tenv);
 	dumpVenv(venv);
