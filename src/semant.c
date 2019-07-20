@@ -125,13 +125,9 @@ bool typesEqual(S_table tenv, Ty_ty t1, Ty_ty t2)
 		printf("Comparing 2 records rn.\n");
 		return recordsEqual(tenv, actual_ty(t1, tenv),
 				    actual_ty(t2, tenv));
-	} else if (t1->kind == t2->kind) {	/* Primitives should fall under here */
-		return TRUE;
-	} else {
-		return FALSE;
+	} else {	/* Primitives should fall under here */
+		return t1->kind == t2->kind;
 	}
-	assert(0);
-	return FALSE;
 }
 
 void transVarDec(S_table venv, S_table tenv, A_dec d)
@@ -187,8 +183,7 @@ struct expty transLetExp(S_table venv, S_table tenv, A_exp a)
 	return exp;
 }
 
-Ty_fieldList
-constructFieldListE(S_table venv, S_table tenv, A_efieldList efieldList)
+Ty_fieldList constructFieldListE(S_table venv, S_table tenv, A_efieldList efieldList)
 {
 	if (efieldList) {
 		S_symbol efieldName = efieldList->head->name;
@@ -200,37 +195,6 @@ constructFieldListE(S_table venv, S_table tenv, A_efieldList efieldList)
 							efieldList->tail));
 	} else {
 		return NULL;
-	}
-}
-
-struct expty transFieldVar(S_table venv, S_table tenv, A_var v)
-{
-	assert(v->kind == A_fieldVar);
-	S_symbol accessorSym = v->u.field.sym;
-	Ty_ty recordType = S_look(venv, v->u.field.var->u.simple);
-	Ty_ty accessorType = S_look(venv, accessorSym);
-	if (recordType->kind != Ty_record) {
-		EM_error(v->pos, "accessed field of non-record %s",
-			 S_name(v->u.simple));
-	}
-	Ty_fieldList fields = recordType->u.record;
-	Ty_field currField = fields->head;
-	while (currField != NULL) {
-		if (currField->name == accessorSym) {
-			break;
-		}
-	}
-	return expTy(NULL, currField->ty);
-}
-
-struct expty transSimpleVar(S_table venv, S_table tenv, A_var v)
-{
-	E_enventry x = S_look(venv, v->u.simple);
-	if (x && x->kind == E_varEntry) {
-		return expTy(NULL, actual_ty(x->u.var.ty, tenv));
-	} else {
-		EM_error(v->pos, "undefined variable %s", S_name(v->u.simple));
-		return expTy(NULL, Ty_Int());
 	}
 }
 
@@ -386,7 +350,19 @@ struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
 	A_oper oper = a->u.op.oper;
 	struct expty left = transExp(venv, tenv, a->u.op.left);
 	struct expty right = transExp(venv, tenv, a->u.op.right);
-	if (oper == A_plusOp || oper == A_gtOp || oper == A_minusOp) {
+	bool arithOp = (
+		oper == A_plusOp || oper == A_minusOp || oper == A_timesOp ||
+		oper == A_divideOp
+	);
+	bool eqOp = (
+		oper == A_eqOp || oper == A_neqOp
+	);
+	bool compOp = (
+		oper == A_gtOp || oper == A_ltOp || oper == A_geOp ||
+		oper == A_leOp
+	);
+	bool boolOp = FALSE; /* FIXME */
+	if (arithOp) {
 		if (left.ty->kind != Ty_int) {
 			EM_error(a->u.op.left->pos, "integer required");
 		}
@@ -394,18 +370,67 @@ struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
 			EM_error(a->u.op.right->pos, "integer required");
 		}
 		return expTy(NULL, Ty_Int());
+	} else if (eqOp) {
+		if (left.ty->kind != right.ty->kind) {
+			EM_error(a->u.op.left->pos, "operands must match types");
+		}
+		return expTy(NULL, Ty_Int());
+	} else if (compOp) {
+		if (left.ty->kind != right.ty->kind) {
+			EM_error(a->u.op.left->pos, "operands must match types");
+		}
+		if (left.ty->kind != Ty_int || left.ty->kind != Ty_string) {
+			EM_error(a->u.op.left->pos, "operand must be string or int");
+		}
+		if (right.ty->kind != Ty_int || right.ty->kind != Ty_string) {
+			EM_error(a->u.op.right->pos, "operand must be string or int");
+		}
+		return expTy(NULL, Ty_Int());
+	} else if (boolOp) {
+		if (left.ty->kind != Ty_int) {
+			EM_error(a->u.op.left->pos, "integer required");
+		}
+		if (right.ty->kind != Ty_int) {
+			EM_error(a->u.op.right->pos, "integer required");
+		}
+		return expTy(NULL, Ty_Int());
+	} else {
+		assert(0);
 	}
-	assert(0);
-	return expTy(NULL, NULL);
 }
 
 struct expty transVar(S_table venv, S_table tenv, A_var v)
 {
 	switch (v->kind) {
 	case A_simpleVar:
-		return transSimpleVar(venv, tenv, v);
+		{
+			E_enventry x = S_look(venv, v->u.simple);
+			if (x && x->kind == E_varEntry) {
+				return expTy(NULL, actual_ty(x->u.var.ty, tenv));
+			} else {
+				EM_error(v->pos, "undefined variable %s", S_name(v->u.simple));
+				return expTy(NULL, Ty_Int());
+			}
+		}
 	case A_fieldVar:
-		return transFieldVar(venv, tenv, v);
+		{
+			assert(v->kind == A_fieldVar);
+			S_symbol accessorSym = v->u.field.sym;
+			Ty_ty recordType = S_look(venv, v->u.field.var->u.simple);
+			Ty_ty accessorType = S_look(venv, accessorSym);
+			if (recordType->kind != Ty_record) {
+				EM_error(v->pos, "accessed field of non-record %s",
+					 S_name(v->u.simple));
+			}
+			Ty_fieldList fields = recordType->u.record;
+			Ty_field currField = fields->head;
+			while (currField != NULL) {
+				if (currField->name == accessorSym) {
+					break;
+				}
+			}
+			return expTy(NULL, currField->ty);
+		}
 	case A_subscriptVar:
 		assert(0);
 	default:
@@ -454,7 +479,6 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 
 void SEM_transProg(A_exp prog)
 {
-	// Typecheck the AST
 	S_table tenv = E_base_tenv();
 	S_table venv = E_base_venv();
 	transExp(venv, tenv, prog);
