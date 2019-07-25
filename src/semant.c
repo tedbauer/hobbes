@@ -329,8 +329,7 @@ struct expty transSeqExp(S_table venv, S_table tenv, A_exp a)
 {
 	transExp(venv, tenv, a->u.seq->head);
 	if (a->u.seq->tail) {
-		return transExp(venv, tenv,
-				A_SeqExp(a->pos, a->u.seq->tail));
+		return transExp(venv, tenv, A_SeqExp(a->pos, a->u.seq->tail));
 	} else {
 		return expTy(NULL, Ty_Void());
 	}
@@ -340,8 +339,7 @@ struct expty transSeqExp(S_table venv, S_table tenv, A_exp a)
 struct expty transRecordExp(S_table venv, S_table tenv, A_exp a)
 {
 	// FIXME: check against provided record type (not just label)
-	Ty_fieldList resultFieldTypes =
-	    constructFieldListE(venv, tenv, a->u.record.fields);
+	Ty_fieldList resultFieldTypes = constructFieldListE(venv, tenv, a->u.record.fields);
 	return expTy(NULL, Ty_Record(resultFieldTypes));
 }
 

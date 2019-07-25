@@ -33,6 +33,8 @@ void yyerror(char *s)
 	A_nametyList nameTyList;
 	A_fieldList fieldList;
 	A_ty ty;
+	A_fundec fdec;
+	A_fundecList fdeclist;
 }
 
 %token <sval> ID STRING
@@ -72,7 +74,13 @@ void yyerror(char *s)
 
 %type <dec>
 	declaration var_declaration
-	func_declaration type_declaration
+	type_declaration
+
+%type <fdec>
+	func_declaration
+
+%type <fdeclist>
+	func_declaration_group
 
 %start program
 
@@ -216,8 +224,8 @@ declaration
 		{ $$ = $1; }
 	| var_declaration
 		{ $$ = $1; }
-	| func_declaration
-		{ $$ = $1; }
+	| func_declaration_group
+		{ $$ = A_FunctionDec(EM_tokPos, $1); }
 	;
 
 type_declaration
@@ -262,15 +270,22 @@ var_declaration
 		{ $$ = A_VarDec(EM_tokPos, S_Symbol($2), S_Symbol($4), $6); }
 	;
 
+func_declaration_group
+	: func_declaration
+		{ $$ = A_FundecList($1, NULL); }
+	| func_declaration func_declaration_group
+		{ $$ = A_FundecList($1, $2); }
+	;
+
 func_declaration
 	: FUNCTION ID LPAREN RPAREN EQ expression
-		{ $$ = A_FunctionDec(EM_tokPos, A_FundecList(A_Fundec(EM_tokPos, S_Symbol($2), NULL, NULL, $6), NULL)); }
+		{ $$ = A_Fundec(EM_tokPos, S_Symbol($2), NULL, NULL, $6); }
 	| FUNCTION ID LPAREN RPAREN COLON ID EQ expression
-		{ $$ = A_FunctionDec(EM_tokPos, A_FundecList(A_Fundec(EM_tokPos, S_Symbol($2), NULL, S_Symbol($6), $8), NULL)); }
+		{ $$ = A_Fundec(EM_tokPos, S_Symbol($2), NULL, S_Symbol($6), $8); }
 	| FUNCTION ID LPAREN type_fields RPAREN EQ expression
-		{ $$ = A_FunctionDec(EM_tokPos, A_FundecList(A_Fundec(EM_tokPos, S_Symbol($2), $4, NULL, $7), NULL)); }
+		{ $$ = A_Fundec(EM_tokPos, S_Symbol($2), $4, NULL, $7); }
 	| FUNCTION ID LPAREN type_fields RPAREN COLON ID EQ expression
-		{ $$ = A_FunctionDec(EM_tokPos, A_FundecList(A_Fundec(EM_tokPos, S_Symbol($2), $4, S_Symbol($7), $9), NULL)); }
+		{ $$ = A_Fundec(EM_tokPos, S_Symbol($2), $4, S_Symbol($7), $9); }
 	;
 
 for_expression
