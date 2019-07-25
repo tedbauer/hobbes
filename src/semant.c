@@ -145,11 +145,24 @@ void transVarDec(S_table venv, S_table tenv, A_dec d)
 	S_enter(venv, d->u.var.var, E_VarEntry(e.ty));
 }
 
+void transFunDecs(S_table venv, S_table tenv, A_dec d)
+{
+	assert(0); // FIXME: implement me
+}
+
+void transFunDec(S_table venv, S_table tenv, A_dec d)
+{
+	assert(d->kind == A_functionDec);
+	transFunDecs(venv, tenv, d);
+}
+
 void transDec(S_table venv, S_table tenv, A_dec d)
 {
 	switch (d->kind) {
 	case A_functionDec:
-		assert(0);
+		transFunDec(venv, tenv, d);
+		dumpTenv(tenv);
+		break;
 	case A_varDec:
 		transVarDec(venv, tenv, d);
 		dumpTenv(tenv);
