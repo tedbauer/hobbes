@@ -9,6 +9,16 @@
 
 bool typesEqual(S_table tenv, Ty_ty t1, Ty_ty t2);
 
+Ty_tyList transParams(S_table tenv, A_fieldList params)
+{
+	if (params) {
+		Ty_ty paramType = actual_ty(S_look(tenv, params->head->typ), tenv);
+		return Ty_TyList(paramType, transParams(tenv, params->tail));
+	} else {
+		return NULL;
+	}
+}
+
 struct expty expTy(Tr_exp exp, Ty_ty ty)
 {
 	struct expty e;
@@ -21,11 +31,9 @@ Ty_fieldList constructFieldList(S_table tenv, A_fieldList fieldList)
 {
 	if (fieldList) {
 		S_symbol fieldName = fieldList->head->name;
-		Ty_ty fieldType =
-		    actual_ty(S_look(tenv, fieldList->head->typ), tenv);
+		Ty_ty fieldType = actual_ty(S_look(tenv, fieldList->head->typ), tenv);
 		Ty_field newHead = Ty_Field(fieldName, fieldType);
-		return Ty_FieldList(newHead,
-				    constructFieldList(tenv, fieldList->tail));
+		return Ty_FieldList(newHead, constructFieldList(tenv, fieldList->tail));
 	} else {
 		return NULL;
 	}
@@ -35,12 +43,8 @@ Ty_ty transRecordTy(S_table tenv, A_ty a)
 {
 	assert(a->kind == A_recordTy);
 	Ty_fieldList resultFieldList = constructFieldList(tenv, a->u.record);
-	printf("Testing resultFieldList...\n");
 	while (resultFieldList) {
-		printf("Constructed field list contains field %s:",
-		       S_name(resultFieldList->head->name));
 		Ty_print(resultFieldList->head->ty);
-		printf("\n");
 		resultFieldList = resultFieldList->tail;
 	}
 	return Ty_Record(resultFieldList);
@@ -77,9 +81,7 @@ Ty_ty findFieldTy(Ty_ty recordTy, S_symbol fieldName)
 	assert(recordTy->kind == Ty_record);
 	Ty_fieldList fields = recordTy->u.record;
 	while (fields) {
-		printf("%s\n", S_name(fields->head->name));
 		if (fields->head->name == fieldName) {
-			printf("Found!!!\n");
 			return fields->head->ty;
 		}
 		fields = fields->tail;
@@ -93,13 +95,11 @@ bool recordsEqual(S_table tenv, Ty_ty t1, Ty_ty t2)
 	assert(t2->kind == Ty_record);
 
 	Ty_fieldList t1CurrFieldList = t1->u.record;
-	printf("About to check these records outtt\n");
 	while (t1CurrFieldList) {
 		Ty_ty t1CurrFieldType =
 		    findFieldTy(t1, t1CurrFieldList->head->name);
 		Ty_ty t2CurrFieldType =
 		    findFieldTy(t2, t1CurrFieldList->head->name);
-		printf("Checked a fieldddd\n");
 		if (!t1CurrFieldType || !t2CurrFieldType) {
 			return FALSE;
 		}
@@ -117,12 +117,10 @@ bool recordsEqual(S_table tenv, Ty_ty t1, Ty_ty t2)
 bool typesEqual(S_table tenv, Ty_ty t1, Ty_ty t2)
 {
 	if (t1->kind == Ty_array && t2->kind == Ty_array) {
-		dumpTenv(tenv);
 		Ty_ty t1_base = actual_ty(t1->u.array, tenv);
 		Ty_ty t2_base = actual_ty(t2->u.array, tenv);
 		return typesEqual(tenv, t1_base, t2_base);
 	} else if (t1->kind == Ty_record && t2->kind == Ty_record) {
-		printf("Comparing 2 records rn.\n");
 		return recordsEqual(tenv, actual_ty(t1, tenv),
 				    actual_ty(t2, tenv));
 	} else {	/* Primitives should fall under here */
@@ -141,19 +139,47 @@ void transVarDec(S_table venv, S_table tenv, A_dec d)
 			EM_error(d->pos, "Type label mismatch");
 		}
 	}
-	printf("Successful var dec.\n");
 	S_enter(venv, d->u.var.var, E_VarEntry(e.ty));
 }
 
-void transFunDecs(S_table venv, S_table tenv, A_dec d)
+void add_params(S_table venv, S_table tenv, A_fieldList params)
 {
-	assert(0); // FIXME: implement me
+	while (params) {
+		Ty_ty paramType = actual_ty(S_look(tenv, params->head->typ), tenv);
+		S_enter(venv, params->head->name, E_VarEntry(paramType));
+		params = params->tail;
+	}
 }
 
 void transFunDec(S_table venv, S_table tenv, A_dec d)
 {
 	assert(d->kind == A_functionDec);
-	transFunDecs(venv, tenv, d);
+
+	// 1. Walk through the headers, and add their types to the type env.
+	A_fundecList currFundecList = d->u.function;
+	while (currFundecList) {
+		A_fundec currFundec = currFundecList->head;
+		Ty_tyList paramTypes = transParams(tenv, currFundec->params);
+		Ty_ty returnType = actual_ty(S_look(tenv, currFundec->result), tenv);
+		E_enventry funEntry = E_FunEntry(paramTypes, returnType);
+		S_enter(venv, currFundec->name, funEntry);
+		currFundecList = currFundecList->tail;
+	}
+
+
+	// 2. Add params to env and typecheck the bodies.
+	A_fundecList currFundecList2 = d->u.function;
+	while (currFundecList2) {
+		A_fundec currFundec = currFundecList2->head;
+		add_params(venv, tenv, currFundec->params);
+		Ty_ty bodyType = transExp(venv, tenv, currFundec->body).ty;
+		Ty_ty returnType = actual_ty(S_look(tenv, currFundec->result), tenv);
+		if (bodyType != returnType) {
+			EM_error(currFundec->pos, "Return type must match type label");
+		}
+		currFundecList2 = currFundecList2->tail;
+	}
+
 }
 
 void transDec(S_table venv, S_table tenv, A_dec d)
@@ -161,25 +187,16 @@ void transDec(S_table venv, S_table tenv, A_dec d)
 	switch (d->kind) {
 	case A_functionDec:
 		transFunDec(venv, tenv, d);
-		dumpTenv(tenv);
 		break;
 	case A_varDec:
 		transVarDec(venv, tenv, d);
-		dumpTenv(tenv);
 		break;
 	case A_typeDec:
 		transTyDec(venv, tenv, d);
-		dumpTenv(tenv);
 		break;
 	default:
 		assert(0);
 	}
-}
-
-struct expty transCallExp(S_table venv, S_table tenv, A_exp a)
-{
-	assert(0);
-	return expTy(NULL, NULL);
 }
 
 struct expty transLetExp(S_table venv, S_table tenv, A_exp a)
@@ -200,12 +217,9 @@ Ty_fieldList constructFieldListE(S_table venv, S_table tenv, A_efieldList efield
 {
 	if (efieldList) {
 		S_symbol efieldName = efieldList->head->name;
-		Ty_ty efieldType =
-		    (transExp(venv, tenv, efieldList->head->exp)).ty;
+		Ty_ty efieldType = (transExp(venv, tenv, efieldList->head->exp)).ty;
 		Ty_field newHead = Ty_Field(efieldName, efieldType);
-		return Ty_FieldList(newHead,
-				    constructFieldListE(venv, tenv,
-							efieldList->tail));
+		return Ty_FieldList(newHead, constructFieldListE(venv, tenv, efieldList->tail));
 	} else {
 		return NULL;
 	}
@@ -318,8 +332,7 @@ struct expty transAssignExp(S_table venv, S_table tenv, A_exp a)
 		assert(0);
 	case A_fieldVar:
 		{
-			Ty_ty recordTy = transVar(venv, tenv,
-						  a->u.assign.var->u.field.var).
+			Ty_ty recordTy = transVar(venv, tenv, a->u.assign.var->u.field.var).
 			    ty;
 			varType =
 			    findFieldTy(recordTy, a->u.assign.var->u.field.sym);
@@ -331,7 +344,6 @@ struct expty transAssignExp(S_table venv, S_table tenv, A_exp a)
 		}
 	}
 	if (typesEqual(tenv, varType, expType)) {
-		printf("Typechecked the assign.\n");
 		return expTy(NULL, Ty_Void());
 	} else {
 		EM_error(a->pos, "LHS did not match type of RHS in assign exp");
@@ -410,6 +422,32 @@ struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
 	}
 }
 
+void check_args(S_table venv, S_table tenv, A_expList argTypes, Ty_tyList expectedTypes)
+{
+	if (argTypes) {
+		Ty_ty argType = transExp(venv, tenv, argTypes->head).ty;
+		Ty_ty expectedType = expectedTypes->head;
+		if (argType != expectedType) {
+			EM_error(argTypes->head->pos, "function arg type didn't match expected type");
+		}
+		check_args(venv, tenv, argTypes->tail, expectedTypes->tail);
+	}
+}
+
+struct expty transCallExp(S_table venv, S_table tenv, A_exp a)
+{
+	assert(a->kind == A_callExp);
+	E_enventry funcEntry = S_look(venv, a->u.call.func);
+
+	//FIXME: make error msg
+	assert(funcEntry->kind == E_funEntry);
+	Ty_tyList formals = funcEntry->u.fun.formals;
+	Ty_ty result = funcEntry->u.fun.result;
+
+	check_args(venv, tenv, a->u.call.args, formals);
+	return expTy(NULL, result);
+}
+
 struct expty transVar(S_table venv, S_table tenv, A_var v)
 {
 	switch (v->kind) {
@@ -461,7 +499,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 	case A_stringExp:
 		return expTy(NULL, Ty_String());
 	case A_callExp:
-		assert(0);
+		return transCallExp(venv, tenv, a);
 	case A_opExp:
 		return transOpExp(venv, tenv, a);
 	case A_recordExp:

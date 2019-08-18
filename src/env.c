@@ -131,16 +131,17 @@ void printVenvBinding(S_symbol sym, E_enventry e)
 
 void dumpTenv(S_table tenv)
 {
-	printf("Type env:\n");
+	printf("========== Type Env =========\n");
 	S_dump(tenv, printTenvBinding);
-	printf("-----\n");
+	printf("=============================\n");
 }
 
 void dumpVenv(S_table venv)
 {
-	printf("Var env:\n");
+
+	printf("========== Var Env ==========\n");
 	S_dump(venv, printTenvBinding);
-	printf("-----\n");
+	printf("=============================\n");
 }
 
 S_table E_base_tenv()
