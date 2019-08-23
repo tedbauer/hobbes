@@ -31,7 +31,7 @@ Ty_fieldList constructFieldList(S_table tenv, A_fieldList fieldList)
 {
 	if (fieldList) {
 		S_symbol fieldName = fieldList->head->name;
-		Ty_ty fieldType = actual_ty(S_look(tenv, fieldList->head->typ), tenv);
+		Ty_ty fieldType = S_look(tenv, fieldList->head->typ);
 		Ty_field newHead = Ty_Field(fieldName, fieldType);
 		return Ty_FieldList(newHead, constructFieldList(tenv, fieldList->tail));
 	} else {
@@ -54,7 +54,7 @@ Ty_ty transTy(S_table tenv, A_ty a)
 {
 	switch (a->kind) {
 	case A_nameTy:
-		return actual_ty(S_look(tenv, a->u.name), tenv);
+		return Ty_Name(a->u.name, S_look(tenv, a->u.name));
 	case A_recordTy:
 		return transRecordTy(tenv, a);
 	case A_arrayTy:
@@ -63,17 +63,31 @@ Ty_ty transTy(S_table tenv, A_ty a)
 	assert(0);
 }
 
-/* FIXME(ted): why is the RHS of a type declaration wrapped
- * in an A_nametyList? Here, I'm making the assumption that
- * these are _always_ singleton lists -- a fact that is weird
- * and could be wrong.
- * One hypothesis: maybe one can parse type declarations
- * in such a way that could make use of A_nametyList? */
 void transTyDec(S_table venv, S_table tenv, A_dec d)
 {
 	assert(d->kind == A_typeDec);
-	Ty_ty t = transTy(tenv, d->u.type->head->ty);
-	S_enter(tenv, d->u.type->head->name, t);
+	A_nametyList nametyList = d->u.type;
+	
+	// 1. Walk through type declarations and process their "headers."
+	A_nametyList currNametyList = nametyList;
+	while (currNametyList) {
+		A_namety currNametyListHead = currNametyList->head;
+		Ty_ty emptyBinding = Ty_Name(currNametyListHead->name, NULL);
+		S_enter(tenv, currNametyListHead->name, emptyBinding);
+		currNametyList = currNametyList->tail;
+	}
+
+	// 2. Process type declaration bodies.
+	A_nametyList currNametyList2 = nametyList;
+	while (currNametyList2) {
+		printf("Processing dec bodies.\n");
+		A_namety currNametyListHead = currNametyList2->head;
+		Ty_ty currTy = transTy(tenv, currNametyListHead->ty);
+		printf("finished transTy.\n");
+		S_enter(tenv, currNametyListHead->name, currTy);
+		currNametyList2 = currNametyList2->tail;
+	}
+	printf("Got through the transTyDec call...?\n");
 }
 
 Ty_ty findFieldTy(Ty_ty recordTy, S_symbol fieldName)
@@ -348,6 +362,7 @@ struct expty transAssignExp(S_table venv, S_table tenv, A_exp a)
 	} else {
 		EM_error(a->pos, "LHS did not match type of RHS in assign exp");
 	}
+	assert(0);
 }
 
 struct expty transSeqExp(S_table venv, S_table tenv, A_exp a)
