@@ -7,6 +7,16 @@
 #include "../include/semant.h"
 #include "../include/env.h"
 
+/*
+ * TODO:
+ * - [ ] Detect recursive type cycles
+ * - [ ] Make sure type equality is correct
+ * - [ ] Better/more error messages
+ * - [ ] Subscript vars
+ * - [ ] Finish binops
+ * - [ ] Cleanup
+ */
+
 bool typesEqual(S_table tenv, Ty_ty t1, Ty_ty t2);
 
 Ty_tyList transParams(S_table tenv, A_fieldList params)
@@ -80,14 +90,11 @@ void transTyDec(S_table venv, S_table tenv, A_dec d)
 	// 2. Process type declaration bodies.
 	A_nametyList currNametyList2 = nametyList;
 	while (currNametyList2) {
-		printf("Processing dec bodies.\n");
 		A_namety currNametyListHead = currNametyList2->head;
 		Ty_ty currTy = transTy(tenv, currNametyListHead->ty);
-		printf("finished transTy.\n");
 		S_enter(tenv, currNametyListHead->name, currTy);
 		currNametyList2 = currNametyList2->tail;
 	}
-	printf("Got through the transTyDec call...?\n");
 }
 
 Ty_ty findFieldTy(Ty_ty recordTy, S_symbol fieldName)
@@ -125,9 +132,6 @@ bool recordsEqual(S_table tenv, Ty_ty t1, Ty_ty t2)
 	return TRUE;		// FIXME
 }
 
-/* FIXME(ted): compares records for structural equivalence,
- * so records can match their type labels; however, this should
- * not be allowed -- must augment. */
 bool typesEqual(S_table tenv, Ty_ty t1, Ty_ty t2)
 {
 	if (t1->kind == Ty_array && t2->kind == Ty_array) {
@@ -286,20 +290,16 @@ struct expty transForExp(S_table venv, S_table tenv, A_exp a)
 	S_enter(venv, a->u.forr.var, E_VarEntry(Ty_Int()));
 	Ty_ty bodyType = transExp(venv, tenv, a->u.forr.body).ty;
 	if (loType->kind != Ty_int) {
-		EM_error(a->pos,
-			 "Start index in for loop must be int");
+		EM_error(a->pos, "Start index in for loop must be int");
 	}
 	if (hiType->kind != Ty_int) {
-		EM_error(a->pos,
-			 "End index in for loop must be int");
+		EM_error(a->pos, "End index in for loop must be int");
 	}
 	if (bodyType->kind != Ty_void) {
-		EM_error(a->pos,
-			 "For loop body must be type void");
+		EM_error(a->pos, "For loop body must be type void");
 	}
 	if (containsAssignTo(a->u.forr.body, a->u.forr.var)) {
-		EM_error(a->pos,
-			 "Cannot assign to index in for loop");
+		EM_error(a->pos, "Cannot assign to index in for loop");
 	}
 	return expTy(NULL, Ty_Void());
 }
@@ -321,14 +321,12 @@ struct expty transIfExp(S_table venv, S_table tenv, A_exp a)
 {
 	Ty_ty testType = transExp(venv, tenv, a->u.iff.test).ty;
 	Ty_ty leftType = transExp(venv, tenv, a->u.iff.then).ty;
-	Ty_ty rightType =
-	    transExp(venv, tenv, a->u.iff.elsee).ty;
+	Ty_ty rightType = transExp(venv, tenv, a->u.iff.elsee).ty;
 	if (testType->kind != Ty_int) {
 		EM_error(a->pos, "If condition must be int");
 	}
 	if (!typesEqual(tenv, leftType, rightType)) {
-		EM_error(a->pos,
-			 "If branches' types must match");
+		EM_error(a->pos, "If branches' types must match");
 	}
 	return expTy(NULL, leftType);
 }
@@ -346,13 +344,10 @@ struct expty transAssignExp(S_table venv, S_table tenv, A_exp a)
 		assert(0);
 	case A_fieldVar:
 		{
-			Ty_ty recordTy = transVar(venv, tenv, a->u.assign.var->u.field.var).
-			    ty;
-			varType =
-			    findFieldTy(recordTy, a->u.assign.var->u.field.sym);
+			Ty_ty recordTy = transVar(venv, tenv, a->u.assign.var->u.field.var).ty;
+			varType = findFieldTy(recordTy, a->u.assign.var->u.field.sym);
 			if (!varType) {
-				EM_error(a->pos,
-					 "tried to access non-existent field");
+				EM_error(a->pos, "tried to access non-existent field");
 			}
 			break;
 		}
@@ -375,10 +370,8 @@ struct expty transSeqExp(S_table venv, S_table tenv, A_exp a)
 	}
 }
 
-/* TODO(ted): abstract, this shares a lot of logic w/ transRecordTy */
 struct expty transRecordExp(S_table venv, S_table tenv, A_exp a)
 {
-	// FIXME: check against provided record type (not just label)
 	Ty_fieldList resultFieldTypes = constructFieldListE(venv, tenv, a->u.record.fields);
 	return expTy(NULL, Ty_Record(resultFieldTypes));
 }
