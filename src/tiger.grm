@@ -30,7 +30,8 @@ void yyerror(char *s)
 	A_efieldList efieldList;
 	A_dec dec;
 	A_decList decList;
-	A_nametyList nameTyList;
+	A_namety namety;
+	A_nametyList nametyList;
 	A_fieldList fieldList;
 	A_ty ty;
 	A_fundec fdec;
@@ -72,9 +73,14 @@ void yyerror(char *s)
 	while_expression expression_kleenes
 	let_declaration lvalue_assignment
 
+%type <namety>
+	type_declaration
+
+%type <nametyList>
+	type_declaration_group
+
 %type <dec>
 	declaration var_declaration
-	type_declaration
 
 %type <fdec>
 	func_declaration
@@ -220,8 +226,8 @@ declarations
 	;
 
 declaration
-	: type_declaration
-		{ $$ = $1; }
+	: type_declaration_group
+		{ $$ = A_TypeDec(EM_tokPos, $1); }
 	| var_declaration
 		{ $$ = $1; }
 	| func_declaration_group
@@ -230,7 +236,14 @@ declaration
 
 type_declaration
 	: TYPE ID EQ type
-		{ $$ = A_TypeDec(EM_tokPos, A_NametyList(A_Namety(S_Symbol($2), $4), NULL)); }
+		{ $$ = A_Namety(S_Symbol($2), $4); }
+	;
+
+type_declaration_group
+	: type_declaration
+		{ $$ = A_NametyList($1, NULL); }
+	| type_declaration type_declaration_group
+		{ $$ = A_NametyList($1, $2); }
 	;
 
 type
