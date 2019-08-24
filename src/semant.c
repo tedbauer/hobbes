@@ -9,6 +9,7 @@
 
 /*
  * TODO:
+ * - [ ] Implement check for break statement in for/while loop
  * - [ ] Detect recursive type cycles
  * - [ ] Make sure type equality is correct
  * - [ ] Better/more error messages
@@ -455,50 +456,101 @@ struct expty transCallExp(S_table venv, S_table tenv, A_exp a)
 	return expTy(NULL, result);
 }
 
+struct expty transSubscriptVar(S_table venv, S_table tenv, A_var v)
+{
+	assert(v->kind == A_subscriptVar);
+	S_symbol arrName = v->u.subscript.var->u.simple;
+	A_exp accessorExp = v->u.subscript.exp;
+	Ty_ty arrType = S_look(venv, arrName);
+	Ty_ty accessorType = transExp(venv, tenv, accessorExp).ty;
+
+	if (arrType->kind != Ty_array) {
+		EM_error(
+			v->pos,
+			"tried to subscript non-subscriptable variable `%s'",
+			arrName
+		);
+		return expTy(NULL, Ty_Int());
+	}
+
+	if (accessorType->kind != Ty_int) {
+		EM_error(
+			v->pos,
+			"tried to access array `%s' with non-int",
+			arrName
+		);
+		return expTy(NULL, Ty_Int());
+	}
+
+	return expTy(NULL, arrType->u.array);
+}
+
+struct expty transFieldVar(S_table venv, S_table tenv, A_var v)
+{
+	assert(v->kind == A_fieldVar);
+	A_var recordVar = v->u.field.var;
+	S_symbol recordName = recordVar->u.simple;
+	S_symbol fieldAccessorName = v->u.field.sym;
+	Ty_ty recordType = S_look(venv, recordName);
+	Ty_ty accessorType = S_look(venv, fieldAccessorName);
+
+	if (recordType->kind != Ty_record) {
+		EM_error(
+			v->pos, 
+			"accessed field of non-record `%s'",
+			S_name(recordName)
+		);
+		return expTy(NULL, Ty_Int());
+	}
+
+	Ty_fieldList fieldTypes = recordType->u.record;
+	Ty_field currField = fieldTypes->head;
+	while (currField) {
+		if (currField->name == fieldAccessorName) {
+			break;
+		}
+	}
+
+	if (currField) {
+		return expTy(NULL, currField->ty);
+	} else {
+		EM_error(
+			v->pos,
+			"accessed nonexistent field `%s' from `%s'",
+			fieldAccessorName, recordName
+		);
+		return expTy(NULL, Ty_Int());
+	}
+}
+
+struct expty transSimpleVar(S_table venv, S_table tenv, A_var v)
+{
+	assert(v->kind == A_simpleVar);
+	S_symbol simpleVar = v->u.simple;
+	E_enventry simpleVarEntry = S_look(venv, simpleVar);
+
+	if (simpleVarEntry && simpleVarEntry->kind == E_varEntry) {
+		Ty_ty simpleVarEntryType = simpleVarEntry->u.var.ty;
+		return expTy(NULL, simpleVarEntryType);
+	} else {
+		EM_error(
+			v->pos,
+			"undefined variable `%s'",
+			S_name(simpleVar)
+		);
+		return expTy(NULL, Ty_Int());
+	}
+}
+
 struct expty transVar(S_table venv, S_table tenv, A_var v)
 {
 	switch (v->kind) {
 	case A_simpleVar:
-		{
-			E_enventry x = S_look(venv, v->u.simple);
-			if (x && x->kind == E_varEntry) {
-				return expTy(NULL, actual_ty(x->u.var.ty, tenv));
-			} else {
-				EM_error(v->pos, "undefined variable %s", S_name(v->u.simple));
-				return expTy(NULL, Ty_Int());
-			}
-		}
+		return transSimpleVar(venv, tenv, v);
 	case A_fieldVar:
-		{
-			assert(v->kind == A_fieldVar);
-			S_symbol accessorSym = v->u.field.sym;
-			Ty_ty recordType = S_look(venv, v->u.field.var->u.simple);
-			Ty_ty accessorType = S_look(venv, accessorSym);
-			if (recordType->kind != Ty_record) {
-				EM_error(v->pos, "accessed field of non-record %s", S_name(v->u.simple));
-			}
-			Ty_fieldList fields = recordType->u.record;
-			Ty_field currField = fields->head;
-			while (currField != NULL) {
-				if (currField->name == accessorSym) {
-					break;
-				}
-			}
-			return expTy(NULL, currField->ty);
-		}
+		return transFieldVar(venv, tenv, v);
 	case A_subscriptVar:
-		{
-			assert(v->kind == A_subscriptVar);
-			Ty_ty arrType = S_look(venv, v->u.subscript.var->u.simple);
-			Ty_ty accessorType = transExp(venv, tenv, v->u.subscript.exp).ty;
-			if (arrType->kind != Ty_array) {
-				EM_error(v->pos, "indexed into non array");
-			}
-			if (accessorType->kind != Ty_int) {
-				EM_error(v->pos, "indexed with non-int accessor");
-			}
-			return expTy(NULL, arrType->u.array);
-		}
+		return transSubscriptVar(venv, tenv, v);
 	default:
 		assert(0);
 	}
