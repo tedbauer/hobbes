@@ -12,7 +12,7 @@
  * - [ ] Detect recursive type cycles
  * - [ ] Make sure type equality is correct
  * - [ ] Better/more error messages
- * - [ ] Subscript vars
+ * - [X] Subscript vars
  * - [ ] Finish binops
  * - [ ] Cleanup
  */
@@ -183,7 +183,6 @@ void transFunDec(S_table venv, S_table tenv, A_dec d)
 		S_enter(venv, currFundec->name, funEntry);
 		currFundecList = currFundecList->tail;
 	}
-
 
 	// 2. Add params to env and typecheck the bodies.
 	A_fundecList currFundecList2 = d->u.function;
@@ -476,8 +475,7 @@ struct expty transVar(S_table venv, S_table tenv, A_var v)
 			Ty_ty recordType = S_look(venv, v->u.field.var->u.simple);
 			Ty_ty accessorType = S_look(venv, accessorSym);
 			if (recordType->kind != Ty_record) {
-				EM_error(v->pos, "accessed field of non-record %s",
-					 S_name(v->u.simple));
+				EM_error(v->pos, "accessed field of non-record %s", S_name(v->u.simple));
 			}
 			Ty_fieldList fields = recordType->u.record;
 			Ty_field currField = fields->head;
@@ -489,7 +487,18 @@ struct expty transVar(S_table venv, S_table tenv, A_var v)
 			return expTy(NULL, currField->ty);
 		}
 	case A_subscriptVar:
-		assert(0);
+		{
+			assert(v->kind == A_subscriptVar);
+			Ty_ty arrType = S_look(venv, v->u.subscript.var->u.simple);
+			Ty_ty accessorType = transExp(venv, tenv, v->u.subscript.exp).ty;
+			if (arrType->kind != Ty_array) {
+				EM_error(v->pos, "indexed into non array");
+			}
+			if (accessorType->kind != Ty_int) {
+				EM_error(v->pos, "indexed with non-int accessor");
+			}
+			return expTy(NULL, arrType->u.array);
+		}
 	default:
 		assert(0);
 	}
