@@ -283,6 +283,11 @@ bool containsAssignTo(A_exp a, S_symbol s)
 	assert(0);
 }
 
+struct expty transBreakExp(S_table venv, S_table tenv, A_exp a)
+{
+
+}
+
 struct expty transForExp(S_table venv, S_table tenv, A_exp a)
 {
 	Ty_ty loType = transExp(venv, tenv, a->u.forr.lo).ty;
@@ -430,30 +435,50 @@ struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
 	}
 }
 
-void check_args(S_table venv, S_table tenv, A_expList argTypes, Ty_tyList expectedTypes)
-{
-	if (argTypes) {
-		Ty_ty argType = transExp(venv, tenv, argTypes->head).ty;
-		Ty_ty expectedType = expectedTypes->head;
-		if (argType != expectedType) {
-			EM_error(argTypes->head->pos, "function arg type didn't match expected type");
-		}
-		check_args(venv, tenv, argTypes->tail, expectedTypes->tail);
-	}
-}
-
 struct expty transCallExp(S_table venv, S_table tenv, A_exp a)
 {
 	assert(a->kind == A_callExp);
-	E_enventry funcEntry = S_look(venv, a->u.call.func);
+	S_symbol funcName = a->u.call.func;
+	E_enventry funcEntry = S_look(venv, funcName);
 
-	//FIXME: make error msg
 	assert(funcEntry->kind == E_funEntry);
-	Ty_tyList formals = funcEntry->u.fun.formals;
-	Ty_ty result = funcEntry->u.fun.result;
+	Ty_tyList expectedArgTypes = funcEntry->u.fun.formals;
+	A_expList actualArgExps = a->u.call.args;
+	Ty_ty resultType = funcEntry->u.fun.result;
 
-	check_args(venv, tenv, a->u.call.args, formals);
-	return expTy(NULL, result);
+	Ty_tyList currExpectedArgTypeList = expectedArgTypes;
+	A_expList currActualArgExpList = actualArgExps;
+
+	while (currExpectedArgTypeList) {
+		if (!currActualArgExpList) {
+			EM_error(
+				a->pos,
+				"incorrect number of arguments supplied to function `%s'",
+				funcName
+			);
+			return expTy(NULL, Ty_Int());
+		}
+
+		Ty_ty currExpectedArgType = currExpectedArgTypeList->head;
+		Ty_ty currActualArgType = transExp(
+			venv, tenv, 
+			currActualArgExpList->head
+		).ty;
+
+		if (currExpectedArgType != currActualArgType) {
+			EM_error(
+				currActualArgExpList->head->pos,
+				"incorrect types supplied to function call on `%s'",
+				funcName
+			);
+			return expTy(NULL, Ty_Int());
+		}
+
+		currExpectedArgTypeList = currExpectedArgTypeList->tail;
+		currActualArgExpList = currActualArgExpList->tail;
+	}
+
+	return expTy(NULL, resultType);
 }
 
 struct expty transSubscriptVar(S_table venv, S_table tenv, A_var v)
