@@ -18,6 +18,15 @@
  * - [ ] Cleanup
  */
 
+/* 
+ * Special symbol stored in the variable environment that either:
+ * - maps to an arbitrary E_enventry when typechecking _is_ occurring
+ *   in a for/while loop
+ * - maps to NULL when typechecking is _not_ occurring in a for/while
+ *   loop
+ */
+S_symbol IN_LOOP = S_Symbol("_IN_LOOP");
+
 bool typesEqual(S_table tenv, Ty_ty t1, Ty_ty t2);
 
 Ty_tyList transParams(S_table tenv, A_fieldList params)
@@ -293,6 +302,7 @@ struct expty transForExp(S_table venv, S_table tenv, A_exp a)
 	Ty_ty loType = transExp(venv, tenv, a->u.forr.lo).ty;
 	Ty_ty hiType = transExp(venv, tenv, a->u.forr.hi).ty;
 	S_enter(venv, a->u.forr.var, E_VarEntry(Ty_Int()));
+	S_beginScope(venv);
 	Ty_ty bodyType = transExp(venv, tenv, a->u.forr.body).ty;
 	if (loType->kind != Ty_int) {
 		EM_error(a->pos, "Start index in for loop must be int");
