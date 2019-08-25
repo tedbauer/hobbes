@@ -25,7 +25,7 @@
  * - maps to NULL when typechecking is _not_ occurring in a for/while
  *   loop
  */
-S_symbol IN_LOOP = S_Symbol("_IN_LOOP");
+//S_symbol IN_LOOP = S_Symbol("_IN_LOOP");
 
 bool typesEqual(S_table tenv, Ty_ty t1, Ty_ty t2);
 
@@ -83,30 +83,6 @@ Ty_ty transTy(S_table tenv, A_ty a)
 	assert(0);
 }
 
-void transTyDec(S_table venv, S_table tenv, A_dec d)
-{
-	assert(d->kind == A_typeDec);
-	A_nametyList nametyList = d->u.type;
-	
-	// 1. Walk through type declarations and process their "headers."
-	A_nametyList currNametyList = nametyList;
-	while (currNametyList) {
-		A_namety currNametyListHead = currNametyList->head;
-		Ty_ty emptyBinding = Ty_Name(currNametyListHead->name, NULL);
-		S_enter(tenv, currNametyListHead->name, emptyBinding);
-		currNametyList = currNametyList->tail;
-	}
-
-	// 2. Process type declaration bodies.
-	A_nametyList currNametyList2 = nametyList;
-	while (currNametyList2) {
-		A_namety currNametyListHead = currNametyList2->head;
-		Ty_ty currTy = transTy(tenv, currNametyListHead->ty);
-		S_enter(tenv, currNametyListHead->name, currTy);
-		currNametyList2 = currNametyList2->tail;
-	}
-}
-
 Ty_ty findFieldTy(Ty_ty recordTy, S_symbol fieldName)
 {
 	assert(recordTy->kind == Ty_record);
@@ -156,6 +132,40 @@ bool typesEqual(S_table tenv, Ty_ty t1, Ty_ty t2)
 	}
 }
 
+struct expty transArrayExp(S_table venv, S_table tenv, A_exp a)
+{
+	Ty_ty initExpTy = transExp(venv, tenv, a->u.array.init).ty;
+	Ty_ty arrayTy = actual_ty(S_look(tenv, a->u.array.typ), tenv);
+	Ty_ty arrayBaseTy = arrayTy->u.array;
+	if (typesEqual(tenv, initExpTy, arrayBaseTy)) {
+		return expTy(NULL, Ty_Array(initExpTy));
+	} else {
+		EM_error(a->pos, "Array type incompatible with init type");
+	}
+}
+
+void transTyDec(S_table venv, S_table tenv, A_dec d)
+{
+	assert(d->kind == A_typeDec);
+	A_nametyList nametyList = d->u.type;
+	
+	A_nametyList currNametyList = nametyList;
+	while (currNametyList) {
+		A_namety currNametyListHead = currNametyList->head;
+		Ty_ty emptyBinding = Ty_Name(currNametyListHead->name, NULL);
+		S_enter(tenv, currNametyListHead->name, emptyBinding);
+		currNametyList = currNametyList->tail;
+	}
+
+	A_nametyList currNametyList2 = nametyList;
+	while (currNametyList2) {
+		A_namety currNametyListHead = currNametyList2->head;
+		Ty_ty currTy = transTy(tenv, currNametyListHead->ty);
+		S_enter(tenv, currNametyListHead->name, currTy);
+		currNametyList2 = currNametyList2->tail;
+	}
+}
+
 void transVarDec(S_table venv, S_table tenv, A_dec d)
 {
 	assert(d->kind == A_varDec);
@@ -170,20 +180,10 @@ void transVarDec(S_table venv, S_table tenv, A_dec d)
 	S_enter(venv, d->u.var.var, E_VarEntry(e.ty));
 }
 
-void add_params(S_table venv, S_table tenv, A_fieldList params)
-{
-	while (params) {
-		Ty_ty paramType = actual_ty(S_look(tenv, params->head->typ), tenv);
-		S_enter(venv, params->head->name, E_VarEntry(paramType));
-		params = params->tail;
-	}
-}
-
 void transFunDec(S_table venv, S_table tenv, A_dec d)
 {
 	assert(d->kind == A_functionDec);
 
-	// 1. Walk through the headers, and add their types to the type env.
 	A_fundecList currFundecList = d->u.function;
 	while (currFundecList) {
 		A_fundec currFundec = currFundecList->head;
@@ -194,35 +194,23 @@ void transFunDec(S_table venv, S_table tenv, A_dec d)
 		currFundecList = currFundecList->tail;
 	}
 
-	// 2. Add params to env and typecheck the bodies.
 	A_fundecList currFundecList2 = d->u.function;
 	while (currFundecList2) {
 		A_fundec currFundec = currFundecList2->head;
-		add_params(venv, tenv, currFundec->params);
+
+		A_fieldList currParams = currFundec->params;
+		while (currParams) {
+			Ty_ty paramType = S_look(tenv, currParams->head->typ);
+			S_enter(venv, currParams->head->name, E_VarEntry(paramType));
+			currParams = currParams->tail;
+		}
+
 		Ty_ty bodyType = transExp(venv, tenv, currFundec->body).ty;
 		Ty_ty returnType = actual_ty(S_look(tenv, currFundec->result), tenv);
 		if (bodyType != returnType) {
-			EM_error(currFundec->pos, "Return type must match type label");
+			EM_error(currFundec->pos, "return type must match type label");
 		}
 		currFundecList2 = currFundecList2->tail;
-	}
-
-}
-
-void transDec(S_table venv, S_table tenv, A_dec d)
-{
-	switch (d->kind) {
-	case A_functionDec:
-		transFunDec(venv, tenv, d);
-		break;
-	case A_varDec:
-		transVarDec(venv, tenv, d);
-		break;
-	case A_typeDec:
-		transTyDec(venv, tenv, d);
-		break;
-	default:
-		assert(0);
 	}
 }
 
@@ -232,7 +220,16 @@ struct expty transLetExp(S_table venv, S_table tenv, A_exp a)
 	S_beginScope(tenv);
 	A_decList d;
 	for (d = a->u.let.decs; d; d = d->tail) {
-		transDec(venv, tenv, d->head);
+		A_dec currDec = d->head;
+		if (currDec->kind == A_functionDec) {
+			transFunDec(venv, tenv, currDec);
+		} else if (currDec->kind == A_varDec) {
+			transVarDec(venv, tenv, currDec);
+		} else if (currDec->kind == A_typeDec) {
+			transTyDec(venv, tenv, currDec);
+		} else {
+			assert(0);
+		}
 	}
 	struct expty exp = transExp(venv, tenv, a->u.let.body);
 	S_endScope(venv);
@@ -240,28 +237,10 @@ struct expty transLetExp(S_table venv, S_table tenv, A_exp a)
 	return exp;
 }
 
-Ty_fieldList constructFieldListE(S_table venv, S_table tenv, A_efieldList efieldList)
+struct expty transBreakExp(S_table venv, S_table tenv, A_exp a)
 {
-	if (efieldList) {
-		S_symbol efieldName = efieldList->head->name;
-		Ty_ty efieldType = (transExp(venv, tenv, efieldList->head->exp)).ty;
-		Ty_field newHead = Ty_Field(efieldName, efieldType);
-		return Ty_FieldList(newHead, constructFieldListE(venv, tenv, efieldList->tail));
-	} else {
-		return NULL;
-	}
-}
-
-struct expty transArrayExp(S_table venv, S_table tenv, A_exp a)
-{
-	Ty_ty initExpTy = transExp(venv, tenv, a->u.array.init).ty;
-	Ty_ty arrayTy = actual_ty(S_look(tenv, a->u.array.typ), tenv);
-	Ty_ty arrayBaseTy = arrayTy->u.array;
-	if (typesEqual(tenv, initExpTy, arrayBaseTy)) {
-		return expTy(NULL, Ty_Array(initExpTy));
-	} else {
-		EM_error(a->pos, "Array type incompatible with init type");
-	}
+	// TODO: check if in for or while loop
+	return expTy(NULL, Ty_Void());
 }
 
 bool containsAssignTo(A_exp a, S_symbol s)
@@ -289,12 +268,6 @@ bool containsAssignTo(A_exp a, S_symbol s)
 	default:
 		assert(0);
 	}
-	assert(0);
-}
-
-struct expty transBreakExp(S_table venv, S_table tenv, A_exp a)
-{
-
 }
 
 struct expty transForExp(S_table venv, S_table tenv, A_exp a)
@@ -304,6 +277,7 @@ struct expty transForExp(S_table venv, S_table tenv, A_exp a)
 	S_enter(venv, a->u.forr.var, E_VarEntry(Ty_Int()));
 	S_beginScope(venv);
 	Ty_ty bodyType = transExp(venv, tenv, a->u.forr.body).ty;
+	S_endScope(venv);
 	if (loType->kind != Ty_int) {
 		EM_error(a->pos, "Start index in for loop must be int");
 	}
@@ -324,24 +298,24 @@ struct expty transWhileExp(S_table venv, S_table tenv, A_exp a)
 	Ty_ty testType = transExp(venv, tenv, a->u.whilee.test).ty;
 	Ty_ty bodyType = transExp(venv, tenv, a->u.whilee.body).ty;
 	if (testType->kind != Ty_int) {
-		EM_error(a->pos, "While condition must be int");
+		EM_error(a->pos, "while condition must be int");
 	}
 	if (bodyType->kind != Ty_void) {
-		EM_error(a->pos, "While body must be void");
+		EM_error(a->pos, "while body must be void");
 	}
 	return expTy(NULL, Ty_Void());
 }
 
 struct expty transIfExp(S_table venv, S_table tenv, A_exp a)
 {
-	Ty_ty testType = transExp(venv, tenv, a->u.iff.test).ty;
+	Ty_ty condType = transExp(venv, tenv, a->u.iff.test).ty;
 	Ty_ty leftType = transExp(venv, tenv, a->u.iff.then).ty;
 	Ty_ty rightType = transExp(venv, tenv, a->u.iff.elsee).ty;
-	if (testType->kind != Ty_int) {
-		EM_error(a->pos, "If condition must be int");
+	if (condType->kind != Ty_int) {
+		EM_error(a->pos, "if condition must be int");
 	}
 	if (!typesEqual(tenv, leftType, rightType)) {
-		EM_error(a->pos, "If branches' types must match");
+		EM_error(a->pos, "if branches' types must match");
 	}
 	return expTy(NULL, leftType);
 }
@@ -350,29 +324,13 @@ struct expty transAssignExp(S_table venv, S_table tenv, A_exp a)
 {
 	assert(a->kind == A_assignExp);
 	Ty_ty expType = transExp(venv, tenv, a->u.assign.exp).ty;
-	Ty_ty varType;
-	switch (a->u.assign.var->kind) {
-	case A_simpleVar:
-		varType = actual_ty(S_look(venv, a->u.var->u.simple), tenv);
-		break;
-	case A_subscriptVar:
-		assert(0);
-	case A_fieldVar:
-		{
-			Ty_ty recordTy = transVar(venv, tenv, a->u.assign.var->u.field.var).ty;
-			varType = findFieldTy(recordTy, a->u.assign.var->u.field.sym);
-			if (!varType) {
-				EM_error(a->pos, "tried to access non-existent field");
-			}
-			break;
-		}
-	}
+	Ty_ty varType = transVar(venv, tenv, a->u.var).ty;
 	if (typesEqual(tenv, varType, expType)) {
 		return expTy(NULL, Ty_Void());
 	} else {
-		EM_error(a->pos, "LHS did not match type of RHS in assign exp");
+		EM_error(a->pos, "mismatched types in assign statement");
+		return expTy(NULL, Ty_Void());
 	}
-	assert(0);
 }
 
 struct expty transSeqExp(S_table venv, S_table tenv, A_exp a)
@@ -385,10 +343,16 @@ struct expty transSeqExp(S_table venv, S_table tenv, A_exp a)
 	}
 }
 
-struct expty transRecordExp(S_table venv, S_table tenv, A_exp a)
+Ty_fieldList transEFieldList(S_table venv, S_table tenv, A_efieldList efieldList)
 {
-	Ty_fieldList resultFieldTypes = constructFieldListE(venv, tenv, a->u.record.fields);
-	return expTy(NULL, Ty_Record(resultFieldTypes));
+	if (efieldList) {
+		S_symbol efieldName = efieldList->head->name;
+		Ty_ty efieldType = (transExp(venv, tenv, efieldList->head->exp)).ty;
+		Ty_field newHead = Ty_Field(efieldName, efieldType);
+		return Ty_FieldList(newHead, transEFieldList(venv, tenv, efieldList->tail));
+	} else {
+		return NULL;
+	}
 }
 
 struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
@@ -455,7 +419,6 @@ struct expty transCallExp(S_table venv, S_table tenv, A_exp a)
 	Ty_tyList expectedArgTypes = funcEntry->u.fun.formals;
 	A_expList actualArgExps = a->u.call.args;
 	Ty_ty resultType = funcEntry->u.fun.result;
-
 	Ty_tyList currExpectedArgTypeList = expectedArgTypes;
 	A_expList currActualArgExpList = actualArgExps;
 
@@ -474,7 +437,6 @@ struct expty transCallExp(S_table venv, S_table tenv, A_exp a)
 			venv, tenv, 
 			currActualArgExpList->head
 		).ty;
-
 		if (currExpectedArgType != currActualArgType) {
 			EM_error(
 				currActualArgExpList->head->pos,
@@ -483,11 +445,9 @@ struct expty transCallExp(S_table venv, S_table tenv, A_exp a)
 			);
 			return expTy(NULL, Ty_Int());
 		}
-
 		currExpectedArgTypeList = currExpectedArgTypeList->tail;
 		currActualArgExpList = currActualArgExpList->tail;
 	}
-
 	return expTy(NULL, resultType);
 }
 
@@ -607,7 +567,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 	case A_opExp:
 		return transOpExp(venv, tenv, a);
 	case A_recordExp:
-		return transRecordExp(venv, tenv, a);
+		return expTy(NULL, Ty_Record(transEFieldList(venv, tenv, a->u.record.fields)));
 	case A_seqExp:
 		return transSeqExp(venv, tenv, a);
 	case A_assignExp:
