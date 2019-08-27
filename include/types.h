@@ -35,4 +35,6 @@ Ty_fieldList Ty_FieldList(Ty_field head, Ty_fieldList tail);
 void Ty_print(Ty_ty t);
 void TyList_print(Ty_tyList list);
 
+string Ty_toString(Ty_ty t);
+
 Ty_ty actual_ty(Ty_ty typ, S_table tab);

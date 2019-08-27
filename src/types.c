@@ -100,6 +100,19 @@ void Ty_print(Ty_ty t)
 	}
 }
 
+string Ty_toString(Ty_ty t)
+{
+	if (t == NULL) {
+		return String("null");
+	} else {
+		string result = String(str_ty[t->kind]);
+		if (t->kind == Ty_name) {
+			result = StringAppend(result, S_name(t->u.name.sym));
+		}
+		return result;
+	}
+}
+
 void TyList_print(Ty_tyList list)
 {
 	if (list == NULL) {
