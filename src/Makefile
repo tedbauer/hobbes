@@ -1,4 +1,4 @@
-.PHONY: clean tigger
+.PHONY: clean hobbes
 
 CFLAGS = -g
 
@@ -8,10 +8,10 @@ ODIR = _build/obj
 _DEPS = absyn.h errormsg.h prabsyn.h symbol.h tokens.h types.h env.h parse.h semant.h table.h translate.h util.h
 DEPS = $(patsubst %,$(IDIR)/%, $(_DEPS))
 
-_OBJ = env.o parse.o prabsyn.o tigger.o table.o util.o absyn.o errormsg.o semant.o symbol.o types.o lex.yy.o y.tab.o
+_OBJ = env.o parse.o prabsyn.o hobbes.o table.o util.o absyn.o errormsg.o semant.o symbol.o types.o lex.yy.o y.tab.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
-tigger: $(OBJ)
+hobbes: $(OBJ)
 	cc -o $@ $^ $(CFLAGS)
 
 y.tab.c: tiger.grm
@@ -25,4 +25,4 @@ $(ODIR)/%.o: %.c $(DEPS)
 	cc -c -o $@ $< $(CFLAGS)
 
 clean:
-	rm -f $(ODIR)/*.o *~ tigger y.tab.* lex.yy.c y.output
+	rm -f $(ODIR)/*.o *~ hobbes y.tab.* lex.yy.c y.output
