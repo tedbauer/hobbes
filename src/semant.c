@@ -90,6 +90,25 @@ struct expty transArrayExp(S_table venv, S_table tenv, A_exp a)
 	}
 }
 
+void detectRecursiveTypeCycle(S_table tenv, A_ty t)
+{
+	if (t->kind == A_nameTy) {
+		S_symbol origin = t->u.name;
+		Ty_ty currTy = S_look(tenv, t->u.name);
+		while (currTy) {
+			printf("%s\n", S_name(currTy->u.name.sym));
+			if (currTy->u.name.sym == origin) {
+				EM_error(t->pos, "type cycle detected");
+				return;
+			}
+			currTy = S_look(tenv, currTy->u.name.sym);
+			if (currTy->kind != Ty_name) {
+				return;
+			}
+		}
+	}
+}
+
 void transTyDec(S_table venv, S_table tenv, A_dec d)
 {
 	assert(d->kind == A_typeDec);
@@ -106,6 +125,7 @@ void transTyDec(S_table venv, S_table tenv, A_dec d)
 	A_nametyList currNametyList2 = nametyList;
 	while (currNametyList2) {
 		A_namety currNametyListHead = currNametyList2->head;
+		detectRecursiveTypeCycle(tenv, currNametyListHead->ty);
 		Ty_ty currTy = transTy(tenv, currNametyListHead->ty);
 		S_enter(tenv, currNametyListHead->name, currTy);
 		currNametyList2 = currNametyList2->tail;
@@ -126,9 +146,6 @@ void transVarDec(S_table venv, S_table tenv, A_dec d)
 		}
 	}
 	S_enter(venv, d->u.var.var, E_VarEntry(e.ty));
-	E_enventry recordTyEntry = S_look(venv, d->u.var.var);
-	assert(recordTyEntry->u.var.ty->u.record->head);
-	dumpVenv(venv);
 }
 
 void transFunDec(S_table venv, S_table tenv, A_dec d)
@@ -139,11 +156,18 @@ void transFunDec(S_table venv, S_table tenv, A_dec d)
 	while (currFundecList) {
 		A_fundec currFundec = currFundecList->head;
 		Ty_tyList paramTypes = transParams(tenv, currFundec->params);
-		Ty_ty returnType = actual_ty(S_look(tenv, currFundec->result), tenv);
-		E_enventry funEntry = E_FunEntry(paramTypes, returnType);
-		S_enter(venv, currFundec->name, funEntry);
+		if (currFundec->result) {
+			Ty_ty returnType = actual_ty(S_look(tenv, currFundec->result), tenv);
+			E_enventry funEntry = E_FunEntry(paramTypes, returnType);
+			S_enter(venv, currFundec->name, funEntry);
+		} else {
+			E_enventry funEntry = E_FunEntry(paramTypes, Ty_Void());
+			S_enter(venv, currFundec->name, funEntry);
+		}
 		currFundecList = currFundecList->tail;
 	}
+
+	printf("Finished adding headers.\n");
 
 	A_fundecList currFundecList2 = d->u.function;
 	while (currFundecList2) {
@@ -157,9 +181,18 @@ void transFunDec(S_table venv, S_table tenv, A_dec d)
 		}
 
 		Ty_ty bodyType = transExp(venv, tenv, currFundec->body).ty;
-		Ty_ty returnType = actual_ty(S_look(tenv, currFundec->result), tenv);
+		Ty_ty returnType = NULL;
+		if (currFundec->result) {
+			returnType = actual_ty(S_look(tenv, currFundec->result), tenv);
+		} else {
+			returnType = Ty_Void();
+		}
 		if (!typesEqual(bodyType, returnType)) {
-			EM_error(currFundec->pos, "return type must match type label");
+			EM_error(
+				currFundec->pos, "return type must match type label; expected `%s', found `%s'",
+				Ty_toString(returnType),
+				Ty_toString(bodyType)
+			);
 		}
 		currFundecList2 = currFundecList2->tail;
 	}
@@ -244,10 +277,18 @@ struct expty transForExp(S_table venv, S_table tenv, A_exp a)
 	Ty_ty bodyType = transLoopBody(venv, tenv, a->u.forr.body).ty;
 	S_endScope(venv);
 	if (loType->kind != Ty_int) {
-		EM_error(a->pos, "Start index in for loop must be int");
+		EM_error(
+			a->pos,
+			"Start index in for loop must be int; found `%s'",
+			Ty_toString(loType)
+		);
 	}
 	if (hiType->kind != Ty_int) {
-		EM_error(a->pos, "End index in for loop must be int");
+		EM_error(
+			a->pos,
+			"End index in for loop must be int; found `%s'",
+			Ty_toString(hiType)
+		);
 	}
 	if (bodyType->kind != Ty_void) {
 		EM_error(a->pos, "For loop body must be type void");
@@ -280,7 +321,12 @@ struct expty transIfExp(S_table venv, S_table tenv, A_exp a)
 		EM_error(a->pos, "if condition must be int");
 	}
 	if (!typesEqual(leftType, rightType)) {
-		EM_error(a->pos, "if branches' types must match");
+		EM_error(
+			a->pos,
+			"if branches' types must match; found `%s' and `%s'",
+			Ty_toString(leftType),
+			Ty_toString(rightType)
+		);
 	}
 	return expTy(NULL, leftType);
 }
@@ -384,11 +430,23 @@ struct expty transOpExp(S_table venv, S_table tenv, A_exp a)
 
 		return expTy(NULL, Ty_Int());
 	} else if (op == A_eqOp || op == A_neqOp) {
-		if (leftTy->kind != rightTy->kind) EM_error(a->u.op.left->pos, "operands must match types");
+		if (leftTy->kind != rightTy->kind)
+			EM_error(
+				a->u.op.left->pos,
+				"operands must match types; found `%s' and `%s'",
+				Ty_toString(leftTy),
+				Ty_toString(rightTy)
+			);
 
 		return expTy(NULL, Ty_Int());
 	} else if (op == A_gtOp || op == A_ltOp || op == A_geOp || op == A_leOp) {
-		if (leftTy->kind != rightTy->kind) EM_error(a->u.op.left->pos, "operands must match types");
+		if (leftTy->kind != rightTy->kind)
+			EM_error(
+				a->u.op.left->pos,
+				"operands must match types; found `%s' and `%s'",
+				Ty_toString(leftTy),
+				Ty_toString(rightTy)
+			);
 
 		if (leftTy->kind != Ty_int && leftTy->kind != Ty_string)
 			EM_error(
@@ -446,8 +504,10 @@ struct expty transCallExp(S_table venv, S_table tenv, A_exp a)
 		if (!typesEqual(currExpectedArgType, currActualArgType)) {
 			EM_error(
 				currActualArgExpList->head->pos,
-				"incorrect types supplied to function call on `%s'",
-				S_name(funcName)
+				"incorrect types supplied to function call on `%s'; expected `%s', found `%s'",
+				S_name(funcName),
+				Ty_toString(currExpectedArgType),
+				Ty_toString(currActualArgType)
 			);
 			return expTy(NULL, Ty_Int());
 		}
@@ -567,7 +627,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 	case A_varExp:
 		return transVar(venv, tenv, a->u.var);
 	case A_nilExp:
-		return expTy(NULL, Ty_Nil());
+		return expTy(NULL, Ty_Void());
 	case A_intExp:
 		return expTy(NULL, Ty_Int());
 	case A_stringExp:
