@@ -96,15 +96,15 @@ void detectRecursiveTypeCycle(S_table tenv, A_ty t)
 		S_symbol origin = t->u.name;
 		Ty_ty currTy = S_look(tenv, t->u.name);
 		while (currTy) {
-			printf("%s\n", S_name(currTy->u.name.sym));
+			if (currTy->kind != Ty_name) {
+				return;
+			}
+			printf("we're at %s. the origin is %s.\n", S_name(currTy->u.name.sym), S_name(origin));
 			if (currTy->u.name.sym == origin) {
 				EM_error(t->pos, "type cycle detected");
 				return;
 			}
 			currTy = S_look(tenv, currTy->u.name.sym);
-			if (currTy->kind != Ty_name) {
-				return;
-			}
 		}
 	}
 }
@@ -119,18 +119,21 @@ void transTyDec(S_table venv, S_table tenv, A_dec d)
 		A_namety currNametyListHead = currNametyList->head;
 		Ty_ty emptyBinding = Ty_Name(currNametyListHead->name, NULL);
 		S_enter(tenv, currNametyListHead->name, emptyBinding);
+		dumpTenv(tenv);
 		currNametyList = currNametyList->tail;
 	}
 
+	dumpTenv(tenv);
 	A_nametyList currNametyList2 = nametyList;
 	while (currNametyList2) {
 		A_namety currNametyListHead = currNametyList2->head;
 		detectRecursiveTypeCycle(tenv, currNametyListHead->ty);
 		Ty_ty currTy = transTy(tenv, currNametyListHead->ty);
-		S_enter(tenv, currNametyListHead->name, currTy);
+		Ty_ty binding = Ty_Name(currNametyListHead->name, currTy);
+		S_enter(tenv, currNametyListHead->name, binding);
 		currNametyList2 = currNametyList2->tail;
 	}
-	dumpTenv(tenv);
+	//dumpTenv(tenv);
 }
 
 void transVarDec(S_table venv, S_table tenv, A_dec d)
@@ -166,8 +169,6 @@ void transFunDec(S_table venv, S_table tenv, A_dec d)
 		}
 		currFundecList = currFundecList->tail;
 	}
-
-	printf("Finished adding headers.\n");
 
 	A_fundecList currFundecList2 = d->u.function;
 	while (currFundecList2) {
