@@ -1,6 +1,11 @@
-typedef struct LL_list_ *LL_list;
+typedef struct LL_list_ {
+	void* head;
+	struct LL_list_ *tail;
+} *LL_list;
 
 LL_list LL_List(void* head, LL_list tail);
+
+LL_list LL_emptyList();
 
 LL_list LL_listOf(int count, ...);
 

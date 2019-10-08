@@ -5,10 +5,10 @@ CFLAGS = -g
 IDIR = ../include
 ODIR = _build/obj
 
-_DEPS = absyn.h errormsg.h prabsyn.h symbol.h tokens.h types.h env.h parse.h semant.h table.h translate.h util.h
+_DEPS = absyn.h errormsg.h prabsyn.h symbol.h tokens.h types.h env.h parse.h semant.h table.h translate.h util.h linkedlist.h
 DEPS = $(patsubst %,$(IDIR)/%, $(_DEPS))
 
-_OBJ = env.o parse.o prabsyn.o hobbes.o table.o util.o absyn.o errormsg.o semant.o symbol.o types.o lex.yy.o y.tab.o
+_OBJ = env.o parse.o prabsyn.o hobbes.o table.o util.o linkedlist.o absyn.o errormsg.o semant.o symbol.o types.o lex.yy.o y.tab.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 hobbes: $(OBJ)

@@ -2,11 +2,6 @@
 #include "../include/util.h"
 #include <stdarg.h>
 
-struct LL_list_ {
-	void* head;
-	LL_list tail;
-};
-
 LL_list LL_List(void* head, LL_list tail)
 {
 	LL_list l = checked_malloc(sizeof(*l));
@@ -26,6 +21,11 @@ LL_list LL_listOf(int count, ...)
 	}
 	va_end(ap);
 	return currTail;
+}
+
+LL_list LL_emptyList()
+{
+	return NULL;
 }
 
 void LL_iter(LL_list list, void (*f) (void* a, void* acc), void* acc)

@@ -6,6 +6,7 @@
 #include "../include/types.h"
 #include "../include/semant.h"
 #include "../include/env.h"
+#include "../include/linkedlist.h"
 
 /*
  * TODO:
@@ -90,22 +91,19 @@ struct expty transArrayExp(S_table venv, S_table tenv, A_exp a)
 	}
 }
 
-void detectRecursiveTypeCycle(S_table tenv, A_ty t)
+void detectRecursiveTypeCycle(S_table tenv, A_namety t, A_pos pos)
 {
-	if (t->kind == A_nameTy) {
-		S_symbol origin = t->u.name;
-		Ty_ty currTy = S_look(tenv, t->u.name);
-		while (currTy) {
-			if (currTy->kind != Ty_name) {
-				return;
-			}
-			printf("we're at %s. the origin is %s.\n", S_name(currTy->u.name.sym), S_name(origin));
-			if (currTy->u.name.sym == origin) {
-				EM_error(t->pos, "type cycle detected");
-				return;
-			}
-			currTy = S_look(tenv, currTy->u.name.sym);
+	S_symbol origin = t->name;
+	Ty_ty currTy = S_look(tenv, t->name);
+	while (currTy) {
+		if (currTy->kind != Ty_name) {
+			return;
 		}
+		if (currTy->u.name.sym == origin) {
+			EM_error(pos, "type cycle detected");
+			return;
+		}
+		currTy = S_look(tenv, currTy->u.name.sym);
 	}
 }
 
@@ -114,11 +112,14 @@ void transTyDec(S_table venv, S_table tenv, A_dec d)
 	assert(d->kind == A_typeDec);
 	A_nametyList nametyList = d->u.type;
 
+	LL_list typeNames = LL_emptyList();
+
 	A_nametyList currNametyList = nametyList;
 	while (currNametyList) {
-		A_namety currNametyListHead = currNametyList->head;
-		Ty_ty emptyBinding = Ty_Name(currNametyListHead->name, NULL);
-		S_enter(tenv, currNametyListHead->name, emptyBinding);
+		S_symbol currNametyListHead = currNametyList->head->name;
+		typeNames = LL_List(currNametyList->head, typeNames);
+		Ty_ty emptyBinding = Ty_Name(currNametyListHead, NULL);
+		S_enter(tenv, currNametyListHead, emptyBinding);
 		dumpTenv(tenv);
 		currNametyList = currNametyList->tail;
 	}
@@ -126,14 +127,19 @@ void transTyDec(S_table venv, S_table tenv, A_dec d)
 	dumpTenv(tenv);
 	A_nametyList currNametyList2 = nametyList;
 	while (currNametyList2) {
-		A_namety currNametyListHead = currNametyList2->head;
-		detectRecursiveTypeCycle(tenv, currNametyListHead->ty);
-		Ty_ty currTy = transTy(tenv, currNametyListHead->ty);
-		Ty_ty binding = Ty_Name(currNametyListHead->name, currTy);
-		S_enter(tenv, currNametyListHead->name, binding);
+		S_symbol currNametyListHead = currNametyList2->head->name;
+		Ty_ty currTy = transTy(tenv, currNametyList2->head->ty);
+		Ty_ty binding = Ty_Name(currNametyListHead, currTy);
+		S_enter(tenv, currNametyListHead, binding);
 		currNametyList2 = currNametyList2->tail;
 	}
-	//dumpTenv(tenv);
+
+	LL_list currNametyList3 = typeNames;
+	while (currNametyList3) {
+		A_namety head = currNametyList3->head;
+		detectRecursiveTypeCycle(tenv, head, d->pos);
+		currNametyList3 = currNametyList3->tail;
+	}
 }
 
 void transVarDec(S_table venv, S_table tenv, A_dec d)
