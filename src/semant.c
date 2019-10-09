@@ -70,11 +70,11 @@ Ty_ty transTy(S_table tenv, A_ty a)
 {
 	switch (a->kind) {
 	case A_nameTy:
-		return Ty_Name(a->u.name, S_look(tenv, a->u.name));
+		return S_look(tenv, a->u.name);
 	case A_recordTy:
 		return Ty_Record(constructFieldList(tenv, a->u.record));
 	case A_arrayTy:
-		return Ty_Array(actual_ty(S_look(tenv, a->u.array), tenv));
+		return Ty_Array(S_look(tenv, a->u.array));
 	}
 	assert(0);
 }
@@ -91,19 +91,23 @@ struct expty transArrayExp(S_table venv, S_table tenv, A_exp a)
 	}
 }
 
-void detectRecursiveTypeCycle(S_table tenv, A_namety t, A_pos pos)
+void detectRecursiveTypeCycle(S_table tenv, S_symbol s, A_pos pos)
 {
-	S_symbol origin = t->name;
-	Ty_ty currTy = S_look(tenv, t->name);
+	LL_list seenNodes = LL_listOf(1, s);
+	S_symbol origin = s;
+	Ty_ty nameTy = S_look(tenv, s);
+	Ty_ty currTy = nameTy->u.name.ty;
 	while (currTy) {
 		if (currTy->kind != Ty_name) {
 			return;
 		}
-		if (currTy->u.name.sym == origin) {
+		if (LL_contains(seenNodes, currTy->u.name.sym)) {
 			EM_error(pos, "type cycle detected");
 			return;
 		}
-		currTy = S_look(tenv, currTy->u.name.sym);
+
+		seenNodes = LL_List(currTy->u.name.sym, seenNodes);
+		currTy = currTy->u.name.ty;
 	}
 }
 
@@ -117,7 +121,7 @@ void transTyDec(S_table venv, S_table tenv, A_dec d)
 	A_nametyList currNametyList = nametyList;
 	while (currNametyList) {
 		S_symbol currNametyListHead = currNametyList->head->name;
-		typeNames = LL_List(currNametyList->head, typeNames);
+		typeNames = LL_List(currNametyList->head->name, typeNames);
 		Ty_ty emptyBinding = Ty_Name(currNametyListHead, NULL);
 		S_enter(tenv, currNametyListHead, emptyBinding);
 		dumpTenv(tenv);
@@ -129,14 +133,14 @@ void transTyDec(S_table venv, S_table tenv, A_dec d)
 	while (currNametyList2) {
 		S_symbol currNametyListHead = currNametyList2->head->name;
 		Ty_ty currTy = transTy(tenv, currNametyList2->head->ty);
-		Ty_ty binding = Ty_Name(currNametyListHead, currTy);
-		S_enter(tenv, currNametyListHead, binding);
+		Ty_ty existingBinding = S_look(tenv, currNametyListHead);
+		existingBinding->u.name.ty = currTy;
 		currNametyList2 = currNametyList2->tail;
 	}
 
 	LL_list currNametyList3 = typeNames;
 	while (currNametyList3) {
-		A_namety head = currNametyList3->head;
+		S_symbol head = currNametyList3->head;
 		detectRecursiveTypeCycle(tenv, head, d->pos);
 		currNametyList3 = currNametyList3->tail;
 	}

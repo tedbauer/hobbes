@@ -76,7 +76,9 @@ Ty_ty actual_ty(Ty_ty orig_typ, S_table tab)
 {
 	Ty_ty typ = orig_typ;
 	while (typ->kind == Ty_name) {
-		typ = S_look(tab, typ->u.name.sym);
+		typ = typ->u.name.ty;
+		Ty_print(typ);
+		printf("\n");
 	}
 	return typ;
 }
@@ -95,7 +97,7 @@ void Ty_print(Ty_ty t)
 	} else {
 		printf("%s", str_ty[t->kind]);
 		if (t->kind == Ty_name) {
-			printf(", %s", S_name(t->u.name.sym));
+			printf(", sym:%s", S_name(t->u.name.sym));
 		}
 	}
 }

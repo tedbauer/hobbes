@@ -23,6 +23,18 @@ LL_list LL_listOf(int count, ...)
 	return currTail;
 }
 
+bool LL_contains(LL_list list, void* item)
+{
+	LL_list currList = list;
+	while (currList) {
+		if (currList->head == item) {
+			return TRUE;
+		}
+		currList = currList->tail;
+	}
+	return FALSE;
+}
+
 LL_list LL_emptyList()
 {
 	return NULL;
