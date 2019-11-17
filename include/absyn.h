@@ -38,7 +38,8 @@ struct A_exp_ {
 	enum {
 		A_varExp, A_nilExp, A_intExp, A_stringExp, A_callExp,
 		A_opExp, A_recordExp, A_seqExp, A_assignExp, A_ifExp,
-		A_whileExp, A_forExp, A_breakExp, A_letExp, A_arrayExp
+		A_whileExp, A_forExp, A_breakExp, A_letExp, A_arrayExp,
+		A_unitExp
 	} kind;
 	A_pos pos;
 	union {
@@ -113,6 +114,7 @@ A_exp A_ForExp(A_pos pos, S_symbol var, A_exp lo, A_exp hi, A_exp body);
 A_exp A_BreakExp(A_pos pos);
 A_exp A_LetExp(A_pos pos, A_decList decs, A_exp body);
 A_exp A_ArrayExp(A_pos pos, S_symbol typ, A_exp size, A_exp init);
+A_exp A_UnitExp(A_pos pos);
 A_dec A_FunctionDec(A_pos pos, A_fundecList function);
 A_dec A_VarDec(A_pos pos, S_symbol var, S_symbol typ, A_exp init);
 A_dec A_TypeDec(A_pos pos, A_nametyList type);

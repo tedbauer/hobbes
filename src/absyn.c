@@ -179,6 +179,14 @@ A_exp A_ArrayExp(A_pos pos, S_symbol typ, A_exp size, A_exp init)
 	return p;
 }
 
+A_exp A_UnitExp(A_pos pos)
+{
+	A_exp p = checked_malloc(sizeof(*p));
+	p->kind = A_unitExp;
+	p->pos = pos;
+	return p;
+}
+
 A_dec A_FunctionDec(A_pos pos, A_fundecList function)
 {
 	A_dec p = checked_malloc(sizeof(*p));

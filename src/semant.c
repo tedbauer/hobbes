@@ -302,7 +302,9 @@ struct expty transForExp(S_table venv, S_table tenv, A_exp a)
 		);
 	}
 	if (bodyType->kind != Ty_void) {
-		EM_error(a->pos, "For loop body must be type void");
+		EM_error(a->pos,
+		"For loop body must be type void; found `%s'",
+		Ty_toString(bodyType));
 	}
 	if (containsAssignTo(a->u.forr.body, a->u.forr.var)) {
 		EM_error(a->pos, "Cannot assign to index in for loop");
@@ -638,7 +640,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 	case A_varExp:
 		return transVar(venv, tenv, a->u.var);
 	case A_nilExp:
-		return expTy(NULL, Ty_Void());
+		return expTy(NULL, Ty_Nil());
 	case A_intExp:
 		return expTy(NULL, Ty_Int());
 	case A_stringExp:
@@ -665,6 +667,8 @@ struct expty transExp(S_table venv, S_table tenv, A_exp a)
 		return transLetExp(venv, tenv, a);
 	case A_arrayExp:
 		return transArrayExp(venv, tenv, a);
+	case A_unitExp:
+		return expTy(NULL, Ty_Void());
 	default:
 		assert(0);
 	}

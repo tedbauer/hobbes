@@ -108,7 +108,7 @@ atom
 	| BREAK
 		{ $$ = A_BreakExp(EM_tokPos); }
 	| LPAREN RPAREN
-		{ $$ = A_NilExp(EM_tokPos); }
+		{ $$ = A_UnitExp(EM_tokPos); }
 	| lvalue_expression
 		{ $$ = A_VarExp(EM_tokPos, $1); }
 	| LPAREN expression_seq RPAREN
